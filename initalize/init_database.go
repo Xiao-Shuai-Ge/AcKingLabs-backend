@@ -32,6 +32,7 @@ func InitRedis(config configs.Config) {
 		if err != nil {
 			zlog.Errorf("无法初始化Redis : %v", err)
 		}
+		zlog.Infof("初始化Redis成功！")
 	} else {
 		zlog.Warnf("不使用Redis")
 	}
