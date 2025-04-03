@@ -35,5 +35,4 @@ func InitRedis(config configs.Config) {
 	} else {
 		zlog.Warnf("不使用Redis")
 	}
-
 }
