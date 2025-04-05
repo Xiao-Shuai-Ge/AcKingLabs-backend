@@ -33,7 +33,7 @@ func (rm *RouteManager) RegisterLoginRoutes(handler PathHandler) {
 	handler(rm.LoginRoutes)
 }
 
-// RegisterCommonRoutes通用功能相关的路由组
+// RegisterCommonRoutes 通用功能相关的路由组
 func (rm *RouteManager) RegisterCommonRoutes(handler PathHandler) {
 	handler(rm.CommonRoutes)
 }

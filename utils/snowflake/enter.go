@@ -122,41 +122,17 @@ func (f ID) Int64() int64 {
 	return int64(f)
 }
 
-// Get12Id 生成 12 位整数形式的 ID
-func GetInt12Id(node *Node) int64 {
-	id := node.Generate().Int64()
-	// 获取高位时间戳部分
-	timestampPart := id >> 22           // 提取时间戳高位（42 位）
-	timestampPart = timestampPart % 1e6 // 取时间戳后 6 位
-	// 获取低位节点和步数部分
-	lowPart := id & ((1 << 22) - 1) // 取低 22 位
-	lowPart = lowPart % 1e6         // 取低位后 6 位
-	// 合并高位和低位部分，组成 12 位整数
-	result := timestampPart*1e6 + lowPart
-	// 如果超出 12 位，则取模确保是 12 位整数
-	if result >= 1e12 {
-		result = result % 1e12
-	}
-	return result
-}
-
 // String 返回 Snowflake ID 的字符串表示
 func (f ID) String() string {
 	return strconv.FormatInt(int64(f), 10)
 }
 
-// GetString12Id 生成 12 位字符串形式的 ID
-func GetString12Id(node *Node) string {
-	id := node.Generate().Int64()
-	timestampPart := id >> 22
-	timestampPart = timestampPart % 1e6
-	lowPart := id & ((1 << 22) - 1)
-	lowPart = lowPart % 1e6
-	// 合并高低部分，组成 12 位字符串
-	result := fmt.Sprintf("%06d%06d", timestampPart, lowPart)
-	// 如果超出 12 位，则截取前 12 位
-	if len(result) > 12 {
-		result = result[:12]
-	}
-	return result
+// GetIntId 返回 Snowflake ID 的 int64 表示
+func GetIntId(node *Node) int64 {
+	return node.Generate().Int64()
+}
+
+// GetStringId 返回 Snowflake ID 的字符串表示
+func GetStringId(node *Node) string {
+	return node.Generate().String()
 }
