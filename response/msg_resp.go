@@ -26,7 +26,6 @@ var (
 	SNOWFLAKE_ID_GENERATE_ERROR = MsgCode{60003, "snowflake id生成失败"}
 	DATABASE_ERROR              = MsgCode{60004, "数据库错误"}
 	REDIS_ERROR                 = MsgCode{60005, "redis错误"}
-	FEISHU_ERROR                = MsgCode{60006, "飞书API错误"}
 
 	/* 参数错误：10000 ~ 19999 */
 	PARAM_NOT_VALID    = MsgCode{10001, "参数无效"}
@@ -37,16 +36,7 @@ var (
 	MESSAGE_NOT_EXIST  = MsgCode{10006, "消息不存在"}
 
 	/* 用户错误 20000 ~ 29999 */
-	USER_NOT_LOGIN             = MsgCode{20001, "用户未登录"}
-	USER_PASSWORD_DIFFERENT    = MsgCode{20002, "用户两次密码输入不一致"}
-	USER_ACCOUNT_NOT_EXIST     = MsgCode{20003, "账号不存在"}
-	USER_CREDENTIALS_ERROR     = MsgCode{20004, "密码错误"}
-	PHONE_ERROR                = MsgCode{20005, "手机号格式错误"}
-	CONNECT_PHONE_ERROR        = MsgCode{20006, "连接不到用户手机"}
-	USER_ACCOUNT_ALREADY_EXIST = MsgCode{20007, "账号已存在"}
-	CAPTCHA_ERROR              = MsgCode{20500, "验证码错误"}
-	INSUFFICENT_PERMISSIONS    = MsgCode{20403, "权限不足"}
-	FEISHU_OPENID_NOT_EXIST    = MsgCode{20008, "该用户手机号未绑定飞书"}
+	USER_NOT_LOGIN = MsgCode{20001, "用户未登录"}
 
 	/*
 	 USER_ACCOUNT_DISABLE(20005, "账号不可用"),
