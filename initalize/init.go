@@ -26,6 +26,9 @@ func Init() {
 	InitDataBase(*global.Config)
 	InitRedis(*global.Config)
 
+	// 初始化全局雪花ID生成器
+	InitSnowflake()
+
 	// 对命令行参数进行处理
 	flags.Run()
 }

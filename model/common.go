@@ -18,7 +18,7 @@ type CommonModel struct {
 func (b *CommonModel) BeforeCreate(db *gorm.DB) error {
 	// 生成雪花ID
 	if b.ID == 0 {
-		b.ID = snowflake.GetInt12Id(global.Node)
+		b.ID = snowflake.GetIntId(global.Node)
 	}
 
 	return nil
