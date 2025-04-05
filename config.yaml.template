@@ -1,0 +1,25 @@
+app:
+  port: 8080
+  host: 0.0.0.0
+  env: dev
+  logfiles: /logs
+  ImagesPath: 存放图片的本地机器路径
+
+log:
+  level: 0
+  format: plain
+  director: /logs
+  show-line: true
+
+redis:
+  enable: true
+  host: localhost
+  port: 6379
+  password:
+  db: 0
+
+database:
+  driver: mysql
+  migrate: true
+  # use dsn
+  dsn: root:123456@tcp(localhost:3307)/island?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms
