@@ -17,5 +17,8 @@ func BeforeCreateBaseModel(db *gorm.DB) {
 		if baseModel, ok := db.Statement.Model.(*model.CommonModel); ok {
 			baseModel.BeforeCreate(db)
 		}
+		if baseModel, ok := db.Statement.Model.(*model.TimeModel); ok {
+			baseModel.BeforeCreate(db)
+		}
 	}
 }

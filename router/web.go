@@ -7,6 +7,7 @@ import (
 	"tgwp/internal/api"
 	"tgwp/log/zlog"
 	"tgwp/manager"
+	"tgwp/middleware"
 )
 
 // RunServer 启动服务器 路由层
@@ -36,7 +37,15 @@ func listen() (*gin.Engine, error) {
 // registerRoutes 注册各业务路由的具体处理函数
 func registerRoutes(routeManager *manager.RouteManager) {
 
+	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/test", api.Template)
+	})
+
+	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/send-code", api.SendCode)
+		rg.POST("/register", api.Register)
+
+		rg.GET("/test", middleware.Authentication, api.TokenTest)
 	})
 }

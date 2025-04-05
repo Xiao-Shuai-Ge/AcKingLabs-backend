@@ -22,4 +22,13 @@ database:
   driver: mysql
   migrate: true
   # use dsn
-  dsn: root:123456@tcp(localhost:3307)/island?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms
+  dsn: root:123456@tcp(localhost:3307)/acking?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms
+
+email:
+  host: smtp.163.com
+  port: 25
+  username: ***.com
+  password: ***
+
+jwt:
+  secret: ***
