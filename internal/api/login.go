@@ -16,7 +16,7 @@ func SendCode(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	zlog.CtxInfof(ctx, "注册请求: %v", req)
+	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
 	resp, err := logic.NewLoginLogic().SendCode(ctx, req)
 	response.Response(c, resp, err)
 }
@@ -30,6 +30,30 @@ func Register(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "注册请求: %v", req)
 	resp, err := logic.NewLoginLogic().Register(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// Login 登录
+func Login(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.LoginReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "登录请求: %v", req)
+	resp, err := logic.NewLoginLogic().Login(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// RefreshToken 刷新token
+func RefreshToken(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.RefreshTokenReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "登录请求: %v", req)
+	resp, err := logic.NewLoginLogic().RefreshToken(ctx, req)
 	response.Response(c, resp, err)
 }
 

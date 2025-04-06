@@ -18,6 +18,25 @@ type RegisterResp struct {
 	Atoken string `json:"atoken"`
 }
 
+type LoginReq struct {
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	IsRemember bool   `json:"is_remember"`
+}
+
+type LoginResp struct {
+	Atoken string `json:"atoken"`
+	Rtoken string `json:"rtoken"`
+}
+
+type RefreshTokenReq struct {
+	Rtoken string `json:"rtoken"`
+}
+
+type RefreshTokenResp struct {
+	Atoken string `json:"atoken"`
+}
+
 type TokenTestReq struct {
 }
 

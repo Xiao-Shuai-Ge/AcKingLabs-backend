@@ -45,6 +45,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/send-code", api.SendCode)
 		rg.POST("/register", api.Register)
+		rg.POST("/login", api.Login)
+		rg.POST("/refresh-token", api.RefreshToken)
 
 		rg.GET("/test", middleware.Authentication, api.TokenTest)
 	})

@@ -2,9 +2,11 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 	"math/rand"
 	"tgwp/global"
 	"tgwp/log/zlog"
@@ -86,6 +88,13 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 		zlog.CtxInfof(ctx, "验证码错误: %v", err)
 		return resp, response.ErrResp(err, response.VERIFY_CODE_VALID)
 	}
+	// 查询用户
+	var user model.User
+	user, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "邮箱已经被注册!: %v", err)
+		return resp, response.ErrResp(err, response.USER_ALREADY_EXIST)
+	}
 	// 满足条件，创建用户
 	// 密码加密
 	HashPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -96,7 +105,7 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 	}
 	// 创建用户
 	id := global.SnowflakeNode.Generate().Int64()
-	user := model.User{
+	user = model.User{
 		ID:       id,
 		Username: req.Username,
 		Password: string(HashPassword),
@@ -110,6 +119,69 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 	}
 	// 生成 atoken
 	atoken, err := jwtUtils.GenAtoken(fmt.Sprintf("%d", id), req.Username, global.ATOKEN_EFFECTIVE_TIME)
+	resp.Atoken = atoken
+	return resp, nil
+}
+
+// Login 登录
+func (l *LoginLogic) Login(ctx context.Context, req types.LoginReq) (resp types.LoginResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// 验证邮箱格式
+	re := regexp.MustCompile(EMAIL_REGEX, 0)
+	if isMatch, _ := re.MatchString(req.Email); !isMatch {
+		zlog.CtxInfof(ctx, "邮箱格式错误: %v", err)
+		return resp, response.ErrResp(err, response.EMAIL_NOT_VALID)
+	}
+	// 查询用户
+	var user model.User
+	user, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户不存在: %v", err)
+		return resp, response.ErrResp(err, response.EMAIL_OR_PASSWORD_ERROR)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "查询用户失败(): %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 验证密码
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err != nil {
+		zlog.CtxErrorf(ctx, "密码错误: %v", err)
+		return resp, response.ErrResp(err, response.EMAIL_OR_PASSWORD_ERROR)
+	}
+	// 生成 atoken
+	var atoken, rtoken string
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%d", user.ID), user.Username, global.ATOKEN_EFFECTIVE_TIME)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	// 生成 rtoken
+	if req.IsRemember {
+		rtoken, err = jwtUtils.GenRtoken(fmt.Sprintf("%d", user.ID), user.Username, global.RTOKEN_EFFECTIVE_TIME)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "生成 rtoken 失败: %v", err)
+			return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+		}
+	}
+	resp.Atoken = atoken
+	resp.Rtoken = rtoken
+	return resp, nil
+}
+
+func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq) (resp types.RefreshTokenResp, err error) {
+	// 验证 rtoken
+	data, err := jwtUtils.IdentifyToken(req.Rtoken)
+	if err != nil {
+		zlog.CtxInfof(ctx, "验证 rtoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.RTOKEN_IS_EXPIRED)
+	}
+	// 生成新的 atoken
+	var atoken string
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%d", data.Userid), data.Username, global.ATOKEN_EFFECTIVE_TIME)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
 	resp.Atoken = atoken
 	return resp, nil
 }
