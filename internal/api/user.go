@@ -1,0 +1,48 @@
+package api
+
+import (
+	"github.com/gin-gonic/gin"
+	"tgwp/log/zlog"
+	"tgwp/logic"
+	"tgwp/response"
+	"tgwp/types"
+	"tgwp/utils/jwtUtils"
+)
+
+// GetUserInfo 获取用户基础信息
+func GetUserInfo(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetUserInfoReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	resp, err := logic.NewUserLogic().GetUserInfo(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// GetMyUserInfo 获取自己的用户基础信息
+func GetMyUserInfo(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetUserInfoReq](c)
+	if err != nil {
+		return
+	}
+	// 直接从token中获取用户ID，然后调用UserInfo接口
+	req.ID = jwtUtils.GetUserId(c)
+	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	resp, err := logic.NewUserLogic().GetUserInfo(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// GetProfile 获取用户资料
+func GetProfile(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetUserProfileReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	resp, err := logic.NewUserLogic().GetUserProfile(ctx, req)
+	response.Response(c, resp, err)
+}

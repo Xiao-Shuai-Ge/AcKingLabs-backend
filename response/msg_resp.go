@@ -43,6 +43,7 @@ var (
 	VERIFY_CODE_VALID       = MsgCode{10008, "验证码无效"}
 	EMAIL_OR_PASSWORD_ERROR = MsgCode{10009, "账号或密码错误"}
 	USER_ALREADY_EXIST      = MsgCode{10010, "用户已存在"}
+	USER_NOT_EXIST          = MsgCode{10011, "用户不存在"}
 
 	/* 用户错误 20000 ~ 29999 */
 	USER_NOT_LOGIN = MsgCode{20001, "用户未登录"}

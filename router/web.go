@@ -44,6 +44,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/test", middleware.Limiter(rate.Every(time.Minute)*5, 5), api.Template)
 	})
 
+	// 注册登录相关路由组
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/send-code", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.SendCode)
 		rg.POST("/register", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Register)
@@ -51,5 +52,12 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*4, 8), api.RefreshToken)
 
 		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication, api.TokenTest)
+	})
+
+	// 注册用户相关路由组
+	routeManager.RegisterUserRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
+		rg.GET("/my-info", middleware.Limiter(rate.Every(time.Second)*5, 10), middleware.Authentication, api.GetMyUserInfo)
+		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
 	})
 }
