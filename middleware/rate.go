@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 	"sync"
@@ -14,17 +15,18 @@ var limiters sync.Map
 func Limiter(r rate.Limit, b int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := zlog.GetCtxFromGin(c)
-		ip := c.ClientIP() // 获取客户端 IP
+		ip := c.ClientIP()
 
-		// 为每个 IP 创建独立的限流器
-		limiter, ok := limiters.Load(ip)
+		// 生成唯一键，组合IP、速率和桶大小
+		key := fmt.Sprintf("%s|%v|%d", ip, r, b)
+
+		// 为每个IP和限流配置创建独立的限流器
+		limiter, ok := limiters.Load(key)
 		if !ok {
 			limiter = rate.NewLimiter(r, b)
-			limiters.Store(ip, limiter)
+			limiters.Store(key, limiter)
 		}
 
-		zlog.CtxInfof(ctx, "ip:%s, rate:%d, burst:%d", ip, r, b)
-		// 检查是否允许请求
 		if !limiter.(*rate.Limiter).Allow() {
 			zlog.CtxInfof(ctx, "请求过于频繁!")
 			response.NewResponse(c).Error(response.REQUEST_FREQUENTLY)
