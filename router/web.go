@@ -3,11 +3,13 @@ package routerg
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 	"tgwp/configs"
 	"tgwp/internal/api"
 	"tgwp/log/zlog"
 	"tgwp/manager"
 	"tgwp/middleware"
+	"time"
 )
 
 // RunServer 启动服务器 路由层
@@ -39,15 +41,15 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/test", api.Template)
+		rg.GET("/test", middleware.Limiter(rate.Every(time.Minute)*3, 3), api.Template)
 	})
 
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/send-code", api.SendCode)
-		rg.POST("/register", api.Register)
-		rg.POST("/login", api.Login)
-		rg.POST("/refresh-token", api.RefreshToken)
+		rg.POST("/send-code", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.SendCode)
+		rg.POST("/register", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.Register)
+		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.Login)
+		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*2, 5), api.RefreshToken)
 
-		rg.GET("/test", middleware.Authentication, api.TokenTest)
+		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication, api.TokenTest)
 	})
 }
