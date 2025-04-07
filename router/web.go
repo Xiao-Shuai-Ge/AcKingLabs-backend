@@ -41,14 +41,14 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/test", middleware.Limiter(rate.Every(time.Minute)*3, 3), api.Template)
+		rg.GET("/test", middleware.Limiter(rate.Every(time.Minute)*5, 5), api.Template)
 	})
 
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/send-code", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.SendCode)
-		rg.POST("/register", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.Register)
-		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*2, 2), api.Login)
-		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*2, 5), api.RefreshToken)
+		rg.POST("/send-code", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.SendCode)
+		rg.POST("/register", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Register)
+		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Login)
+		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*4, 8), api.RefreshToken)
 
 		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication, api.TokenTest)
 	})
