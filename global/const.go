@@ -8,14 +8,15 @@ import (
 // 所有常量文件读取位置
 const (
 	DEFAULT_CONFIG_FILE_PATH = "/config.yaml"
-	//ATOKEN_EFFECTIVE_TIME    = time.Hour * 2
-	ATOKEN_EFFECTIVE_TIME = time.Second * 10
+	ATOKEN_EFFECTIVE_TIME    = time.Hour * 2
+	//ATOKEN_EFFECTIVE_TIME = time.Second * 10
 
 	RTOKEN_EFFECTIVE_TIME = time.Hour * 24 * 7
 	AUTH_ENUMS_ATOKEN     = "atoken"
 	AUTH_ENUMS_RTOKEN     = "rtoken"
 	DEFAULT_NODE_ID       = 1
 	TOKEN_USER_ID         = "user_id"
+	TOKEN_ROLE            = "role"
 )
 
 var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)

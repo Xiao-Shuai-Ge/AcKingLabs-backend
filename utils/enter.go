@@ -102,3 +102,26 @@ func RecordTime(start time.Time) func() {
 		zlog.Debugf("use time:%d", end.Unix()-start.Unix())
 	}
 }
+
+// Ordered 可比较的类型
+type Ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+		~float32 | ~float64 | ~string
+}
+
+// Max 泛型函数，返回最大值
+func Max[T Ordered](values ...T) T {
+	if len(values) == 0 {
+		var zero T
+		return zero
+	}
+
+	MAX := values[0]
+	for _, v := range values[1:] {
+		if v > MAX {
+			MAX = v
+		}
+	}
+	return MAX
+}

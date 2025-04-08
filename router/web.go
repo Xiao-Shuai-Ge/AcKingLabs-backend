@@ -58,6 +58,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterUserRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 		rg.GET("/my-info", middleware.Limiter(rate.Every(time.Second)*5, 10), middleware.Authentication, api.GetMyUserInfo)
+		// 获取和修改用户资料
 		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
+		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetProfile)
 	})
 }

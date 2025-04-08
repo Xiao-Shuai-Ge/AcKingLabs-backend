@@ -110,6 +110,7 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 		Username: req.Username,
 		Password: string(HashPassword),
 		Email:    req.Email,
+		Role:     0,
 	}
 	// 放入数据库
 	err = repo.NewLoginRepo(global.DB).AddUser(user)
@@ -118,7 +119,7 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	// 生成 atoken
-	atoken, err := jwtUtils.GenAtoken(fmt.Sprintf("%d", id), req.Username, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err := jwtUtils.GenAtoken(fmt.Sprintf("%d", id), req.Username, 0, global.ATOKEN_EFFECTIVE_TIME)
 	resp.Atoken = atoken
 	return resp, nil
 }
@@ -150,14 +151,14 @@ func (l *LoginLogic) Login(ctx context.Context, req types.LoginReq) (resp types.
 	}
 	// 生成 atoken
 	var atoken, rtoken string
-	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%d", user.ID), user.Username, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%d", user.ID), user.Username, user.Role, global.ATOKEN_EFFECTIVE_TIME)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 	// 生成 rtoken
 	if req.IsRemember {
-		rtoken, err = jwtUtils.GenRtoken(fmt.Sprintf("%d", user.ID), user.Username, global.RTOKEN_EFFECTIVE_TIME)
+		rtoken, err = jwtUtils.GenRtoken(fmt.Sprintf("%d", user.ID), user.Username, user.Role, global.RTOKEN_EFFECTIVE_TIME)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "生成 rtoken 失败: %v", err)
 			return resp, response.ErrResp(err, response.INTERNAL_ERROR)
@@ -177,7 +178,7 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 	}
 	// 生成新的 atoken
 	var atoken string
-	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), data.Username, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), data.Username, data.Role, global.ATOKEN_EFFECTIVE_TIME)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)

@@ -46,3 +46,16 @@ func GetProfile(c *gin.Context) {
 	resp, err := logic.NewUserLogic().GetUserProfile(ctx, req)
 	response.Response(c, resp, err)
 }
+
+// SetProfile 设置用户资料
+func SetProfile(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.SetUserProfileReq](c)
+	if err != nil {
+		return
+	}
+	req.ID = jwtUtils.GetUserId(c)
+	zlog.CtxInfof(ctx, "修改用户资料请求: %v", req)
+	resp, err := logic.NewUserLogic().SetUserProfile(ctx, req)
+	response.Response(c, resp, err)
+}

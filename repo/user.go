@@ -21,3 +21,9 @@ func (r *UserRepo) GetUserProfileByID(id int64) (model.User, error) {
 	err := r.DB.Where("id = ?", id).First(&user).Error
 	return user, err
 }
+
+// UpdateUserProfile  更新用户信息
+func (r *UserRepo) UpdateUserProfile(user model.User) error {
+	err := r.DB.Save(&user).Error
+	return err
+}

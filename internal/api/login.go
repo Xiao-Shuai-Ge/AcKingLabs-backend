@@ -66,6 +66,8 @@ func TokenTest(c *gin.Context) {
 	}
 	userId := jwtUtils.GetUserId(c)
 	zlog.CtxInfof(ctx, "解析token成功，userId: %v", userId)
+	role := jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "解析token成功，role: %v", role)
 
 	zlog.CtxInfof(ctx, "注册请求: %v", req)
 	resp, err := logic.NewLoginLogic().TokenTest(ctx, req)

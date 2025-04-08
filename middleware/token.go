@@ -45,5 +45,6 @@ func Authentication(c *gin.Context) {
 	}
 	//将token内部数据传下去,在logic.token内有对应方法获取userid
 	c.Set(global.TOKEN_USER_ID, data.Userid)
+	c.Set(global.TOKEN_ROLE, data.Role)
 	c.Next()
 }

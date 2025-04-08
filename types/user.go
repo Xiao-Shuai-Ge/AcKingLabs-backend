@@ -9,6 +9,7 @@ type GetUserInfoResp struct {
 	Username string `json:"username"`
 	Avatar   string `json:"avatar"`
 	Xp       int    `json:"xp"`
+	Role     int    `json:"role"`
 }
 
 type GetUserProfileReq struct {
@@ -27,4 +28,22 @@ type GetUserProfileResp struct {
 
 	CodeforcesID     string `json:"codeforces_id"`
 	CodeforcesRating int    `json:"codeforces_rating"`
+
+	Role int `json:"role"`
+}
+
+type SetUserProfileReq struct {
+	ID string `json:"id"`
+
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+
+	Grade     int    `json:"grade"`
+	StudentNo string `json:"student_no"`
+	RealName  string `json:"real_name"`
+
+	CodeforcesID string `json:"codeforces_id"`
+}
+
+type SetUserProfileResp struct {
 }

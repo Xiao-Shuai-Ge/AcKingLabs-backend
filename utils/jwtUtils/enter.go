@@ -12,12 +12,14 @@ type TokenData struct {
 	Userid   string `json:"user_id"`
 	Username string `json:"username"`
 	Class    string `json:"class"`
+	Role     int    `json:"role"`
 }
 
-func GenToken(userid string, username string, exp time.Duration, class string) (string, error) {
+func GenToken(userid string, username string, role int, exp time.Duration, class string) (string, error) {
 	claims := jwt.MapClaims{
 		"userid":   userid,
 		"username": username,
+		"role":     role,
 		"class":    class,
 		"exp":      time.Now().Add(exp).Unix(),
 	}
@@ -26,12 +28,12 @@ func GenToken(userid string, username string, exp time.Duration, class string) (
 	return tokenString, err
 }
 
-func GenAtoken(userid string, username string, exp time.Duration) (string, error) {
-	return GenToken(userid, username, exp, global.AUTH_ENUMS_ATOKEN)
+func GenAtoken(userid string, username string, role int, exp time.Duration) (string, error) {
+	return GenToken(userid, username, role, exp, global.AUTH_ENUMS_ATOKEN)
 }
 
-func GenRtoken(userid string, username string, exp time.Duration) (string, error) {
-	return GenToken(userid, username, exp, global.AUTH_ENUMS_RTOKEN)
+func GenRtoken(userid string, username string, role int, exp time.Duration) (string, error) {
+	return GenToken(userid, username, role, exp, global.AUTH_ENUMS_RTOKEN)
 }
 
 func IdentifyToken(tokenString string) (TokenData, error) {
@@ -59,6 +61,7 @@ func IdentifyToken(tokenString string) (TokenData, error) {
 		Userid:   claims["userid"].(string),
 		Username: claims["username"].(string),
 		Class:    claims["class"].(string),
+		Role:     int(claims["role"].(float64)),
 	}, nil
 }
 
@@ -70,4 +73,14 @@ func GetUserId(c *gin.Context) string {
 		}
 	}
 	return ""
+}
+
+func GetRole(c *gin.Context) int {
+	if data, exists := c.Get(global.TOKEN_ROLE); exists {
+		role, ok := data.(int)
+		if ok {
+			return role
+		}
+	}
+	return 0
 }
