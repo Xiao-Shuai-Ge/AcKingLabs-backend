@@ -45,6 +45,7 @@ func (l *UserLogic) GetUserInfo(ctx context.Context, req types.GetUserInfoReq) (
 	resp.Username = user.Username
 	resp.Avatar = user.Avatar
 	resp.Xp = user.Xp
+	resp.Role = user.Role
 
 	return resp, nil
 }
@@ -87,6 +88,19 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 	if err != nil {
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 检查权限
+	if operatorID != userID {
+		// 查询操作者是不是管理员
+		if req.OperatorRole < 3 {
+			zlog.CtxErrorf(ctx, "非法操作: %v", req.OperatorID)
+			return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+		}
 	}
 	// 检验数据
 	// 1.用户名去除所有空格，且不能为空，且长度不超过 30
@@ -140,5 +154,52 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "更新用户信息失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+	return resp, nil
+}
+
+// SetUserRole 设置用户权限
+func (l *UserLogic) SetUserRole(ctx context.Context, req types.SetUserRoleReq) (resp types.SetUserRoleResp, err error) {
+	// ID 转化为 int64
+	userID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 检查权限(必须是超级管理员)
+	if req.OperatorRole < 4 {
+		zlog.CtxErrorf(ctx, "非法操作")
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	// 修改权限
+	err = repo.NewUserRepo(global.DB).SetUserRole(userID, req.Role)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "修改权限失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	zlog.CtxInfof(ctx, "修改权限成功")
+	// 修改用户经验值
+	// 获取用户当前经验值
+	user, err := repo.NewUserRepo(global.DB).GetUserProfileByID(userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户并不存在!: %v", err)
+		return resp, response.ErrResp(err, response.USER_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户信息失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	if req.Role == 2 {
+		// 至少为 200
+		user.Xp = utils.Max(user.Xp, 200)
+	} else if req.Role == 3 {
+		// 至少为 400
+		user.Xp = utils.Max(user.Xp, 400)
+	}
+	// 更新用户信息
+	err = repo.NewUserRepo(global.DB).UpdateUserProfile(user)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "更新用户信息失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
 	return resp, nil
 }

@@ -61,5 +61,6 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		// 获取和修改用户资料
 		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
 		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetProfile)
+		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetRole)
 	})
 }

@@ -23,6 +23,7 @@ var (
 	HAVE_NOT_BEARER    = MsgCode{-20005, "请求头中需要有Bearer字段"}
 	RTOKEN_IS_EXPIRED  = MsgCode{-20006, "rtoken已过期"}
 	REQUEST_FREQUENTLY = MsgCode{-20007, "请求过于频繁"}
+	PERMISSION_DENIED  = MsgCode{-20008, "权限不足"}
 
 	/* 内部错误 60000 ~ 69999 */
 	INTERNAL_ERROR              = MsgCode{60001, "内部错误, check log"}

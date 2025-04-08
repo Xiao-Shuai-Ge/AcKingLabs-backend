@@ -33,6 +33,9 @@ type GetUserProfileResp struct {
 }
 
 type SetUserProfileReq struct {
+	OperatorID   string `json:"-"`
+	OperatorRole int    `json:"-"`
+
 	ID string `json:"id"`
 
 	Username string `json:"username"`
@@ -46,4 +49,14 @@ type SetUserProfileReq struct {
 }
 
 type SetUserProfileResp struct {
+}
+
+type SetUserRoleReq struct {
+	OperatorRole int `json:"-"`
+
+	ID   string `json:"id"`
+	Role int    `json:"role"`
+}
+
+type SetUserRoleResp struct {
 }
