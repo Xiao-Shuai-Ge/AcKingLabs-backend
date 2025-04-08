@@ -52,7 +52,7 @@ func RefreshToken(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	zlog.CtxInfof(ctx, "登录请求: %v", req)
+	zlog.CtxInfof(ctx, "刷新token请求: %v", req)
 	resp, err := logic.NewLoginLogic().RefreshToken(ctx, req)
 	response.Response(c, resp, err)
 }

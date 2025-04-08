@@ -177,11 +177,12 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 	}
 	// 生成新的 atoken
 	var atoken string
-	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%d", data.Userid), data.Username, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), data.Username, global.ATOKEN_EFFECTIVE_TIME)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
+	zlog.CtxInfof(ctx, "刷新 atoken 成功: %s", atoken)
 	resp.Atoken = atoken
 	return resp, nil
 }

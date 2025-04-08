@@ -16,7 +16,7 @@ func GetUserInfo(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	zlog.CtxInfof(ctx, "获取用户基础信息请求: %v", req)
 	resp, err := logic.NewUserLogic().GetUserInfo(ctx, req)
 	response.Response(c, resp, err)
 }
@@ -30,7 +30,7 @@ func GetMyUserInfo(c *gin.Context) {
 	}
 	// 直接从token中获取用户ID，然后调用UserInfo接口
 	req.ID = jwtUtils.GetUserId(c)
-	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	zlog.CtxInfof(ctx, "获取自己的用户基础信息请求: %v", req)
 	resp, err := logic.NewUserLogic().GetUserInfo(ctx, req)
 	response.Response(c, resp, err)
 }
@@ -42,7 +42,7 @@ func GetProfile(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	zlog.CtxInfof(ctx, "发送验证码请求: %v", req)
+	zlog.CtxInfof(ctx, "获取用户资料请求: %v", req)
 	resp, err := logic.NewUserLogic().GetUserProfile(ctx, req)
 	response.Response(c, resp, err)
 }
