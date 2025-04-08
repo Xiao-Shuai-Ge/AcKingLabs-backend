@@ -32,3 +32,8 @@ func (r *UserRepo) SetUserRole(id int64, role int) error {
 	err := r.DB.Model(&model.User{}).Where("id = ?", id).Update("role", role).Error
 	return err
 }
+
+func (r *UserRepo) SetCodeforcesRating(id int64, rating int) error {
+	err := r.DB.Model(&model.User{}).Where("id = ?", id).Update("codeforces_rating", rating).Error
+	return err
+}

@@ -2,8 +2,11 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
+	"net/http"
 	"strconv"
 	"strings"
 	"tgwp/global"
@@ -14,6 +17,11 @@ import (
 	"tgwp/types"
 	"tgwp/utils"
 	"time"
+)
+
+const (
+	CODEFORCES_API_URL             = "https://codeforces.com/api/user.info?handles=%s&checkHistoricHandles=false"
+	REDIS_CODEFORCES_IS_UPDATE_KEY = "codeforces_is_update_%s"
 )
 
 type UserLogic struct {
@@ -78,7 +86,73 @@ func (l *UserLogic) GetUserProfile(ctx context.Context, req types.GetUserProfile
 	resp.CodeforcesRating = user.CodeforcesRating
 	resp.Role = user.Role
 
+	// 判断需不需要并刷新 codeforces rating
+	var newRating int64
+	newRating, err = RefreshCodeforcesRating(ctx, user.ID, user.CodeforcesID)
+	if err == nil && newRating != -1 {
+		resp.CodeforcesRating = int(newRating)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "刷新 codeforces rating 失败: %v", err)
+	}
+
 	return resp, nil
+}
+
+func RefreshCodeforcesRating(ctx context.Context, userID int64, codeforcesID string) (rating int64, err error) {
+	// 判断 redis 是否存在 (2小时之内是否有过更新)
+	redisKey := fmt.Sprintf(REDIS_CODEFORCES_IS_UPDATE_KEY, codeforcesID)
+	var exists int64
+	exists, err = global.Rdb.Exists(ctx, redisKey).Result()
+	if exists == 1 {
+		// 两小时之内有过更新，返回-1
+		zlog.CtxInfof(ctx, "两小时之内有过更新")
+		return -1, nil
+	} else {
+		// 两小时之内没有更新，更新 redis 并返回
+		global.Rdb.Set(ctx, redisKey, "1", 2*time.Hour)
+	}
+
+	// 刷新 codeforces rating
+	var resp *http.Response
+	resp, err = http.Get(fmt.Sprintf(CODEFORCES_API_URL, codeforcesID))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	// 检查 HTTP 状态码
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("codeforces API 返回异常状态码: %d", resp.StatusCode)
+	}
+
+	// 解析 JSON 响应
+	var cfResponse struct {
+		Status string `json:"status"`
+		Result []struct {
+			Rating int `json:"rating"`
+		} `json:"result"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&cfResponse); err != nil {
+		return 0, fmt.Errorf("JSON 解析失败: %v", err)
+	}
+
+	// 检查 API 状态
+	if cfResponse.Status != "OK" {
+		return 0, fmt.Errorf("codeforces API 错误: %s", cfResponse.Status)
+	}
+	// 检查用户数据是否存在
+	if len(cfResponse.Result) == 0 {
+		return 0, errors.New("未找到该用户数据")
+	}
+
+	// 存放到数据库
+	err = repo.NewUserRepo(global.DB).SetCodeforcesRating(userID, cfResponse.Result[0].Rating)
+	if err != nil {
+		return 0, fmt.Errorf("更新数据库失败: %v", err)
+	}
+
+	// 提取用户 Rating（若用户无积分则默认为 0）
+	return int64(cfResponse.Result[0].Rating), nil
 }
 
 func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfileReq) (resp types.SetUserProfileResp, err error) {
@@ -141,6 +215,19 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 	} else if err != nil {
 		zlog.CtxErrorf(ctx, "获取用户信息失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 判断需不需要并刷新 codeforces rating
+	if req.CodeforcesID != user.CodeforcesID {
+		zlog.CtxInfof(ctx, "codeforces ID 发生变化，需要刷新 codeforces rating")
+		// 删除 redis 缓存
+		redisKey := fmt.Sprintf(REDIS_CODEFORCES_IS_UPDATE_KEY, user.CodeforcesID)
+		global.Rdb.Del(ctx, redisKey)
+		// 刷新 codeforces rating
+		var newRating int64
+		newRating, err = RefreshCodeforcesRating(ctx, user.ID, user.CodeforcesID)
+		if err == nil && newRating != -1 {
+			user.CodeforcesRating = int(newRating)
+		}
 	}
 	// 更新用户信息
 	user.Username = req.Username
