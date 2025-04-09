@@ -19,4 +19,11 @@ const (
 	TOKEN_ROLE            = "role"
 )
 
+var (
+	TYPE_SET = map[string]bool{
+		"diary":  true,
+		"answer": true,
+	}
+)
+
 var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)

@@ -1,6 +1,7 @@
 package initalize
 
 import (
+	"fmt"
 	"tgwp/cmd/flags"
 	"tgwp/global"
 	"tgwp/utils"
@@ -19,6 +20,7 @@ func Init() {
 	// 加载配置文件
 	InitConfig()
 
+	fmt.Println(global.Config.DB.Dsn)
 	// 正式初始化日志
 	InitLog(global.Config)
 

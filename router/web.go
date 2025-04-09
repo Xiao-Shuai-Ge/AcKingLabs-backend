@@ -64,9 +64,10 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetRole)
 	})
 
-	// 注册周记相关路由组
-	routeManager.RegisterDiaryRoutes(func(rg *gin.RouterGroup) {
-		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
+	// 注册帖子相关路由组
+	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 300), middleware.Authentication, api.CreatePost)
 
+		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 	})
 }

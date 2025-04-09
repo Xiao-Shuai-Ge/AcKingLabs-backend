@@ -34,6 +34,8 @@ func migrateTables() {
 	//自动迁移某一个表，确保表结构存在
 	err := global.DB.AutoMigrate(
 		&model.User{},
+		&model.Post{},
+		&model.PostLike{},
 	)
 	if err != nil {
 		fmt.Println("数据库迁移失败！")

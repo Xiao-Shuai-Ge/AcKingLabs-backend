@@ -125,3 +125,15 @@ func Max[T Ordered](values ...T) T {
 	}
 	return MAX
 }
+
+type CanAbs interface {
+	int64 | float64
+}
+
+// Abs 泛型函数，返回绝对值
+func Abs[T CanAbs](value T) T {
+	if value < 0 {
+		return -value
+	}
+	return value
+}
