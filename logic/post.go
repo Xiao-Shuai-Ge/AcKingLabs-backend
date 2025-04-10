@@ -12,6 +12,7 @@ import (
 	"tgwp/types"
 	"tgwp/utils"
 	"time"
+	"unicode/utf8"
 )
 
 type PostLogic struct {
@@ -46,8 +47,9 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 2. 内容不能超过 5000 个字符
-	if len(req.Content) > 5000 {
-		zlog.CtxErrorf(ctx, "内容不能超过 5000 个字符: %v", err)
+	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
+	if utf8.RuneCountInString(req.Content) > 5000 {
+		zlog.CtxErrorf(ctx, "内容不能超过 5000 个字: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 除了周记打卡可以私密，其他类型都不可以私密
@@ -63,12 +65,13 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 	// 创建帖子
 	id := global.SnowflakeNode.Generate().Int64()
 	post := model.Post{
-		ID:      id,
-		UserID:  userID,
-		Title:   req.Title,
-		Content: req.Content,
-		Type:    req.Type,
-		Source:  req.Source,
+		ID:        id,
+		UserID:    userID,
+		Title:     req.Title,
+		Content:   req.Content,
+		Type:      req.Type,
+		Source:    req.Source,
+		IsPrivate: req.IsPrivate,
 	}
 	err = repo.NewPostRepo(global.DB).CreatePost(post)
 	if err != nil {
@@ -76,6 +79,46 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	resp.ID = id
+	return
+}
+
+func (l *PostLogic) GetPostDetail(ctx context.Context, req types.GetPostDetailReq) (resp types.GetPostDetailResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 查询帖子详情
+	post, err := repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 判断是否有权限查看
+	if post.IsPrivate {
+		// 如果是私密，只有自己和管理员可以查看
+		if post.UserID != postID && !(req.OperatorRole >= global.ROLE_ADMIN) {
+			zlog.CtxErrorf(ctx, "非作者或管理员无权查看私密帖子: %v", err)
+			return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+		}
+	}
+	// 转换为响应结构
+	resp.ID = post.ID
+	resp.UserID = post.UserID
+	resp.Title = post.Title
+	resp.Content = post.Content
+	resp.Type = post.Type
+	resp.Source = post.Source
+	resp.Likes = post.Likes
+	resp.Comments = post.Comments
+	resp.CreatedAt = post.CreatedTime
+	resp.UpdatedAt = post.UpdatedTime
+
+	resp.IsAdminLike = post.IsAdminLike
+	resp.IsPrivate = post.IsPrivate
+	resp.IsFeatured = post.IsFeatured
 	return
 }
 

@@ -17,6 +17,13 @@ const (
 	DEFAULT_NODE_ID       = 1
 	TOKEN_USER_ID         = "user_id"
 	TOKEN_ROLE            = "role"
+
+	ROLE_NOT_LOGIN   = -1
+	ROLE_GUEST       = 0
+	ROLE_USER        = 1
+	ROLE_PLAYER      = 2
+	ROLE_ADMIN       = 3
+	ROLE_SUPER_ADMIN = 4
 )
 
 var (

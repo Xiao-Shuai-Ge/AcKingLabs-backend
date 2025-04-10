@@ -21,3 +21,17 @@ func CreatePost(c *gin.Context) {
 	resp, err := logic.NewPostLogic().CreatePost(ctx, req)
 	response.Response(c, resp, err)
 }
+
+// GetPostDetail 获取帖子详情
+func GetPostDetail(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetPostDetailReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	req.OperatorRole = jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "获取帖子详情请求: %v", req)
+	resp, err := logic.NewPostLogic().GetPostDetail(ctx, req)
+	response.Response(c, resp, err)
+}

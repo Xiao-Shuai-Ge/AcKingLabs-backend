@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 	"tgwp/configs"
+	"tgwp/global"
 	"tgwp/internal/api"
 	"tgwp/log/zlog"
 	"tgwp/manager"
@@ -51,23 +52,23 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Login)
 		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*4, 8), api.RefreshToken)
 
-		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication, api.TokenTest)
+		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_SUPER_ADMIN), api.TokenTest)
 	})
 
 	// 注册用户相关路由组
 	routeManager.RegisterUserRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
-		rg.GET("/my-info", middleware.Limiter(rate.Every(time.Second)*5, 10), middleware.Authentication, api.GetMyUserInfo)
+		rg.GET("/my-info", middleware.Limiter(rate.Every(time.Second)*5, 10), middleware.Authentication(global.ROLE_GUEST), api.GetMyUserInfo)
 		// 获取和修改用户资料
 		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
-		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetProfile)
-		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication, api.SetRole)
+		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetProfile)
+		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
 	})
 
 	// 注册帖子相关路由组
 	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 300), middleware.Authentication, api.CreatePost)
-
+		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
+		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
 		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 	})
 }
