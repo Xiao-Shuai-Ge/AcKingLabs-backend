@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 	"gorm.io/gorm"
+	"tgwp/log/zlog"
 	"tgwp/model"
 )
 
@@ -27,8 +28,7 @@ func (r *PostRepo) GetPostDetail(id int64) (model.Post, error) {
 }
 
 func (r *PostRepo) IsPostLikeExists(post_id int64, user_id int64) (is_like bool, err error) {
-	var postLike model.PostLike
-	err = r.DB.Model(&model.PostLike{}).Where("post_id =? AND user_id = ?", post_id, user_id).First(&postLike).Error
+	err = r.DB.Model(&model.PostLike{}).Where("post_id =? AND user_id = ?", post_id, user_id).First(&model.PostLike{}).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -40,25 +40,105 @@ func (r *PostRepo) IsPostLikeExists(post_id int64, user_id int64) (is_like bool,
 	}
 }
 
-func (r *PostRepo) CancelPostLike(post_id int64, user_id int64) error {
-	var postLike model.PostLike
-	err := r.DB.Model(&model.PostLike{}).Where("post_id =? AND user_id = ?", post_id, user_id).Delete(&postLike).Error
-	if err != nil {
-		return err
+func (r *PostRepo) CancelPostLike(post_id int64, user_id int64) (err error) {
+	result := r.DB.Model(&model.PostLike{}).Where("post_id =? AND user_id = ?", post_id, user_id).Delete(&model.PostLike{})
+	if result.Error != nil {
+		return result.Error
+	} else if result.RowsAffected == 0 {
+		zlog.Errorf("删除失败: %v", result.Error)
+		return nil
 	}
+
 	err = r.DB.Model(&model.Post{}).Where("id = ?", post_id).Update("likes", gorm.Expr("likes - ?", 1)).Error
 	return err
 }
 
-func (r *PostRepo) AddPostLike(postLike model.PostLike) error {
-	err := r.DB.Model(&model.Post{}).Where("id = ?", postLike.PostID).Update("likes", gorm.Expr("likes + ?", 1)).Error
+func (r *PostRepo) AddPostLike(postLike model.PostLike) (err error) {
+	err = r.DB.Create(&postLike).Error
 	if err != nil {
 		return err
 	}
-	return r.DB.Create(&postLike).Error
+
+	err = r.DB.Model(&model.Post{}).Where("id = ?", postLike.PostID).Update("likes", gorm.Expr("likes + ?", 1)).Error
+	if err != nil {
+		return err
+	}
+	return
 }
 
-func (r *PostRepo) MarkAdminLike(post_id int64) error {
+func (r *PostRepo) MarkAdminLikePost(post_id int64) error {
 	err := r.DB.Model(&model.Post{}).Where("id = ?", post_id).Update("is_admin_like", true).Error
+	return err
+}
+
+func (r *PostRepo) MarkAdminLikeComment(comment_id int64) error {
+	err := r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Update("is_admin_like", true).Error
+	return err
+}
+
+func (r *PostRepo) CreateComment(comment model.Comment) error {
+	// 创建评论
+	err := r.DB.Create(&comment).Error
+	if err != nil {
+		return err
+	}
+	// 更新帖子评论数
+	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment.PostID).Update("comments", gorm.Expr("comments + ?", 1)).Error
+	return err
+}
+
+func (r *PostRepo) GetMoreComments(post_id int64, before int64, count int) ([]model.Comment, error) {
+	var comments []model.Comment
+	err := r.DB.Model(&model.Comment{}).Where("post_id = ? AND id < ? ", post_id, before).Order("id DESC").Limit(count).Find(&comments).Error
+	return comments, err
+}
+
+func (r *PostRepo) GetCommentDetail(id int64) (model.Comment, error) {
+	var comment model.Comment
+	err := r.DB.First(&comment, id).Error
+	return comment, err
+}
+
+func (r *PostRepo) IsCommentLikeExists(comment_id int64, user_id int64) (is_like bool, err error) {
+	err = r.DB.Model(&model.CommentLike{}).Where("comment_id = ? AND user_id = ?", comment_id, user_id).First(&model.CommentLike{}).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	} else {
+		return true, nil
+	}
+}
+
+func (r *PostRepo) CancelCommentLike(comment_id int64, user_id int64) (err error) {
+	result := r.DB.Model(&model.CommentLike{}).Where("comment_id =? AND user_id = ?", comment_id, user_id).Delete(&model.CommentLike{})
+	if result.Error != nil {
+		return result.Error
+	} else if result.RowsAffected == 0 {
+		zlog.Errorf("删除失败: %v", result.Error)
+		return nil
+	}
+
+	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Update("likes", gorm.Expr("likes - ?", 1)).Error
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (r *PostRepo) AddCommentLike(commentLike model.CommentLike) (err error) {
+	err = r.DB.Create(&commentLike).Error
+	if err != nil {
+		return err
+	}
+
+	err = r.DB.Model(&model.Comment{}).Where("id = ?", commentLike.CommentID).Update("likes", gorm.Expr("likes + ?", 1)).Error
+	if err != nil {
+		return err
+	}
+
 	return err
 }

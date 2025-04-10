@@ -36,6 +36,8 @@ func migrateTables() {
 		&model.User{},
 		&model.Post{},
 		&model.PostLike{},
+		&model.Comment{},
+		&model.CommentLike{},
 	)
 	if err != nil {
 		fmt.Println("数据库迁移失败！")

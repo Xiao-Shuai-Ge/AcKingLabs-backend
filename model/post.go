@@ -37,3 +37,30 @@ type PostLike struct {
 func (PostLike) TableName() string {
 	return "post_like"
 }
+
+type Comment struct {
+	ID int64 `json:"id" gorm:"column:id;primaryKey;type:bigint;type:bigint"`
+	TimeModel
+
+	Content     string `json:"content" gorm:"column:content;type:text;comment:内容"`
+	PostID      int64  `json:"post_id" gorm:"column:post_id;type:bigint;comment:帖子ID;index"`
+	UserID      int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID"`
+	Likes       int    `json:"likes" gorm:"not null;column:likes;type:int;comment:点赞数"`
+	IsAdminLike bool   `json:"is_admin_like" gorm:"not null;column:is_admin_like;type:bool;comment:是否有管理员点赞"`
+}
+
+func (Comment) TableName() string {
+	return "comments"
+}
+
+type CommentLike struct {
+	ID int64 `json:"id" gorm:"column:id;primaryKey;type:bigint;type:bigint"`
+	TimeModel
+
+	CommentID int64 `json:"comment_id" gorm:"column:comment_id;type:bigint;comment:评论ID;uniqueIndex:idx_comment_user_unique"`
+	UserID    int64 `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;uniqueIndex:idx_comment_user_unique"`
+}
+
+func (CommentLike) TableName() string {
+	return "comment_like"
+}

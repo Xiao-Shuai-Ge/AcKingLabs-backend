@@ -70,8 +70,15 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
 		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
 
-		rg.GET("/like-post", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
-		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_USER), api.LikePost)
+		rg.GET("/like-post", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
+		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*20, 50), middleware.Authentication(global.ROLE_USER), api.LikePost)
 		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
+
+		rg.POST("/comment", middleware.Limiter(rate.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreateComment)
+		rg.GET("/comment-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMoreComments)
+
+		rg.GET("/like-comment", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikeComment)
+		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*20, 50), middleware.Authentication(global.ROLE_USER), api.LikeComment)
+
 	})
 }
