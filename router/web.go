@@ -69,6 +69,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
 		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
+
+		rg.GET("/like-post", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
+		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_USER), api.LikePost)
 		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 	})
 }

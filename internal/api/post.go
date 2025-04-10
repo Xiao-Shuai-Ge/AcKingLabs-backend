@@ -35,3 +35,29 @@ func GetPostDetail(c *gin.Context) {
 	resp, err := logic.NewPostLogic().GetPostDetail(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func GetLikePost(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetLikePostReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	zlog.CtxInfof(ctx, "获取帖子列表请求: %v", req)
+	resp, err := logic.NewPostLogic().GetLikePost(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// LikePost 点赞帖子
+func LikePost(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.LikePostReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	req.OperatorRole = jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "获取帖子列表请求: %v", req)
+	resp, err := logic.NewPostLogic().LikePost(ctx, req)
+	response.Response(c, resp, err)
+}

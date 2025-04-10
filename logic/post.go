@@ -122,6 +122,99 @@ func (l *PostLogic) GetPostDetail(ctx context.Context, req types.GetPostDetailRe
 	return
 }
 
+func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp types.LikePostResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 判断是否已经点赞
+	isLike, err := repo.NewPostRepo(global.DB).IsPostLikeExists(postID, operatorID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询点赞状态失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	if isLike {
+		// 已经点赞，取消点赞
+		err = repo.NewPostRepo(global.DB).CancelPostLike(postID, operatorID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "取消点赞失败: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+		resp.IsLike = false
+		return
+	} else {
+		// 先判断是否为管理员点赞
+		if req.OperatorRole >= global.ROLE_ADMIN {
+			// 判断是否已有管理员点赞，如果第一次有管理员点赞，应该为用户增加经验
+			var post model.Post
+			post, err = repo.NewPostRepo(global.DB).GetPostDetail(postID)
+			if err != nil {
+				zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+				return resp, response.ErrResp(err, response.DATABASE_ERROR)
+			}
+			if !post.IsAdminLike {
+				// 第一次有管理员点赞，增加经验 +5，并标记为管理员点赞
+				err = repo.NewPostRepo(global.DB).MarkAdminLike(postID)
+				if err != nil {
+					zlog.CtxErrorf(ctx, "标记管理员点赞失败: %v", err)
+					return resp, response.ErrResp(err, response.DATABASE_ERROR)
+				}
+				// 增加经验
+				err = repo.NewUserRepo(global.DB).AddUserXp(post.UserID, 5)
+				if err != nil {
+					zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
+					return resp, response.ErrResp(err, response.DATABASE_ERROR)
+				}
+			}
+		}
+		// 点赞
+		id := global.SnowflakeNode.Generate().Int64()
+		postLike := model.PostLike{
+			PostID: postID,
+			UserID: operatorID,
+			ID:     id,
+		}
+		err = repo.NewPostRepo(global.DB).AddPostLike(postLike)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "点赞失败: %v", err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		resp.IsLike = true
+	}
+	return
+}
+
+func (l *PostLogic) GetLikePost(ctx context.Context, req types.GetLikePostReq) (resp types.GetLikePostResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 查询是否有点赞记录
+	IsLike, err := repo.NewPostRepo(global.DB).IsPostLikeExists(postID, operatorID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询点赞状态失败: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	resp.IsLike = IsLike
+	return
+}
+
 func GetWeekCode() string {
 	timeNow := time.Now()
 	timeNow = time.UnixMilli(1744081921000)

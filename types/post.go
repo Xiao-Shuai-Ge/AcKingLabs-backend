@@ -39,3 +39,23 @@ type GetPostDetailResp struct {
 	IsPrivate   bool `json:"is_private"`
 	IsFeatured  bool `json:"is_featured"`
 }
+
+type LikePostReq struct {
+	OperatorID   string `form:"-"`
+	OperatorRole int    `form:"-"`
+
+	PostID string `json:"post_id"`
+}
+
+type LikePostResp struct {
+	IsLike bool `json:"is_like"`
+}
+
+type GetLikePostReq struct {
+	OperatorID string `form:"-"`
+	PostID     string `form:"post_id"`
+}
+
+type GetLikePostResp struct {
+	IsLike bool `json:"is_like"`
+}
