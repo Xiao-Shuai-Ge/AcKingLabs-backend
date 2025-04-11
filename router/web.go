@@ -80,5 +80,6 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/like-comment", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikeComment)
 		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*20, 50), middleware.Authentication(global.ROLE_USER), api.LikeComment)
 
+		rg.GET("/post-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMorePosts)
 	})
 }

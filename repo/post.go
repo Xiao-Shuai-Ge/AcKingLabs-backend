@@ -148,3 +148,21 @@ func (r *PostRepo) AddCommentLike(commentLike model.CommentLike) (err error) {
 
 	return err
 }
+
+func (r *PostRepo) GetMoreDiaryByWeight(source string, before int64, count int) ([]model.Post, error) {
+	var posts []model.Post
+	err := r.DB.Model(&model.Post{}).Where("type = 'diary' AND source = ? AND weight < ? ", source, before).Order("weight DESC,id DESC").Limit(count).Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) GetMoreDiaryByID(source string, before int64, count int) ([]model.Post, error) {
+	var posts []model.Post
+	err := r.DB.Model(&model.Post{}).Where("type = 'diary' AND source = ? AND id < ? ", source, before).Order("id DESC").Limit(count).Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) GetMoreDiaryByUser(user_id int64, before int64, count int) ([]model.Post, error) {
+	var posts []model.Post
+	err := r.DB.Model(&model.Post{}).Where("type = 'diary' AND user_id = ? AND id < ? ", user_id, before).Order("id DESC").Limit(count).Find(&posts).Error
+	return posts, err
+}

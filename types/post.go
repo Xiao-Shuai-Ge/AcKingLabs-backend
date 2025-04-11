@@ -109,3 +109,36 @@ type GetLikeCommentReq struct {
 type GetLikeCommentResp struct {
 	IsLike bool `json:"is_like"`
 }
+
+type GetMorePostsReq struct {
+	Type     string `form:"type"`
+	Source   string `form:"source"`
+	BeforeID string `form:"before_id"`
+	By       string `form:"by"`
+	Count    int    `form:"count"`
+	UserID   string `form:"user_id"`
+}
+
+type PostInfo struct {
+	ID           int64  `json:"id,string"`
+	UserID       int64  `json:"user_id,string"`
+	Title        string `json:"title"`
+	ContentShort string `json:"content_short"`
+	Type         string `json:"type"`
+	Source       string `json:"source"`
+	Likes        int    `json:"likes"`
+	Comments     int    `json:"comments"`
+	CreatedAt    int64  `json:"created_at"`
+	UpdatedAt    int64  `json:"updated_at"`
+
+	IsAdminLike bool `json:"is_admin_like"`
+	IsPrivate   bool `json:"is_private"`
+	IsFeatured  bool `json:"is_featured"`
+
+	Weight int64 `json:"weight"`
+}
+
+type GetMorePostsResp struct {
+	Posts  []PostInfo `json:"posts"`
+	Length int        `json:"length"`
+}

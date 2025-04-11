@@ -236,6 +236,10 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 	user.StudentNo = req.StudentNo
 	user.RealName = req.RealName
 	user.CodeforcesID = req.CodeforcesID
+	// 如果用户的身份是游客，那么这次提交将升级为普通用户
+	if user.Role == 0 {
+		user.Role = 1
+	}
 	err = repo.NewUserRepo(global.DB).UpdateUserProfile(user)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "更新用户信息失败: %v", err)

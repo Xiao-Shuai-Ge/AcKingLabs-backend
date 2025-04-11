@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/model"
@@ -41,9 +42,9 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		zlog.CtxInfof(ctx, "解析出打卡周数: %s", req.Source)
 	}
 	// 判断数据范围
-	// 1. 标题不能超过 50 个字符
-	if len(req.Title) > 50 {
-		zlog.CtxErrorf(ctx, "标题不能超过 50 个字符: %v", err)
+	// 1. 标题不能超过 30 个字符
+	if len(req.Title) > 30 {
+		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 2. 内容不能超过 5000 个字符
@@ -376,6 +377,85 @@ func (l *PostLogic) GetLikeComment(ctx context.Context, req types.GetLikeComment
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	resp.IsLike = IsLike
+	return
+}
+
+func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq) (resp types.GetMorePostsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	beforeID, err := strconv.ParseInt(req.BeforeID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.BeforeID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 分各种情况查询帖子
+	var posts []model.Post
+	if req.Type == "diary" {
+		// 周记类型
+		if req.By == "popular" || req.By == "weight" {
+			// 按热度排序
+			posts, err = repo.NewPostRepo(global.DB).GetMoreDiaryByWeight(req.Source, beforeID, req.Count)
+		} else if req.By == "new" {
+			// 按最新排序
+			posts, err = repo.NewPostRepo(global.DB).GetMoreDiaryByID(req.Source, beforeID, req.Count)
+		} else if req.By == "user" {
+			// 查看个人
+			var userID int64
+			userID, err = strconv.ParseInt(req.UserID, 10, 64)
+			if err != nil {
+				zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
+				return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+			}
+			posts, err = repo.NewPostRepo(global.DB).GetMoreDiaryByUser(userID, beforeID, req.Count)
+		} else {
+			zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+	} else if req.Type == "post" {
+		// 各种帖子类型
+	} else {
+		// 不存在的类型
+		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 数据库查询失败
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
+	for _, post := range posts {
+		// 截短内容
+		contentShort := post.Content
+		// 去掉换行符
+		contentShort = strings.ReplaceAll(contentShort, "\n", " ")
+		if len(contentShort) > 200 {
+			contentShort = contentShort[:200]
+		}
+		if post.IsPrivate {
+			contentShort = "......"
+		}
+		// 组装返回数据
+		resp.Posts = append(resp.Posts, types.PostInfo{
+			ID:           post.ID,
+			UserID:       post.UserID,
+			Title:        post.Title,
+			ContentShort: contentShort,
+			Type:         post.Type,
+			Source:       post.Source,
+			Likes:        post.Likes,
+			Comments:     post.Comments,
+			CreatedAt:    post.CreatedTime,
+			UpdatedAt:    post.UpdatedTime,
+
+			IsAdminLike: post.IsAdminLike,
+			IsPrivate:   post.IsPrivate,
+			IsFeatured:  post.IsFeatured,
+
+			Weight: post.Weight,
+		})
+	}
+	resp.Length = len(resp.Posts)
 	return
 }
 

@@ -36,6 +36,7 @@ func GetPostDetail(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// GetLikePost 获取帖子是否点赞
 func GetLikePost(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetLikePostReq](c)
@@ -62,6 +63,7 @@ func LikePost(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// CreateComment 创建评论
 func CreateComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.CreateCommentReq](c)
@@ -74,6 +76,7 @@ func CreateComment(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// GetMoreComments 获取更多评论
 func GetMoreComments(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetMoreCommentsReq](c)
@@ -85,6 +88,7 @@ func GetMoreComments(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// GetLikeComment 获取评论是否点赞
 func GetLikeComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetLikeCommentReq](c)
@@ -97,6 +101,7 @@ func GetLikeComment(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// LikeComment 点赞评论
 func LikeComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.LikeCommentReq](c)
@@ -107,5 +112,17 @@ func LikeComment(c *gin.Context) {
 	req.OperatorRole = jwtUtils.GetRole(c)
 	zlog.CtxInfof(ctx, "点赞评论请求: %v", req)
 	resp, err := logic.NewPostLogic().LikeComment(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// GetMorePosts 获取更多帖子
+func GetMorePosts(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetMorePostsReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "获取更多帖子请求: %v", req)
+	resp, err := logic.NewPostLogic().GetMorePosts(ctx, req)
 	response.Response(c, resp, err)
 }
