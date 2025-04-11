@@ -72,6 +72,7 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		Type:      req.Type,
 		Source:    req.Source,
 		IsPrivate: req.IsPrivate,
+		Weight:    time.Now().UnixMilli(),
 	}
 	err = repo.NewPostRepo(global.DB).CreatePost(post)
 	if err != nil {
@@ -298,12 +299,6 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	err = repo.NewPostRepo(global.DB).CancelCommentLike(commentID, operatorID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "hhhh取消点赞失败: %v", err)
-		return resp, response.ErrResp(err, response.DATABASE_ERROR)
-	}
-	return
 	// 判断是否已经点赞
 	isLike, err := repo.NewPostRepo(global.DB).IsCommentLikeExists(commentID, operatorID)
 	if err != nil {

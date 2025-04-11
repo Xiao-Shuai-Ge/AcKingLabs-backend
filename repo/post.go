@@ -17,6 +17,12 @@ func NewPostRepo(db *gorm.DB) *PostRepo {
 	}
 }
 
+func (r *PostRepo) ComputePostWeight() (err error) {
+	// 权重 = 创建时间+点赞数量(一小时)+评论数量(一小时)+管理员是否点赞(三天)+精选(两周)
+	err = r.DB.Model(&model.Post{}).Where("type != ?", "no_weight").Update("weight", gorm.Expr("created_time + (likes * 3600000) + (comments * 3600000) + (is_admin_like * 259200000) + (is_featured * 1209600000)")).Error
+	return err
+}
+
 func (r *PostRepo) CreatePost(post model.Post) error {
 	return r.DB.Create(&post).Error
 }
@@ -83,7 +89,7 @@ func (r *PostRepo) CreateComment(comment model.Comment) error {
 		return err
 	}
 	// 更新帖子评论数
-	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment.PostID).Update("comments", gorm.Expr("comments + ?", 1)).Error
+	err = r.DB.Model(&model.Post{}).Where("id = ?", comment.PostID).Update("comments", gorm.Expr("comments + ?", 1)).Error
 	return err
 }
 
