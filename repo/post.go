@@ -198,3 +198,8 @@ func (r *PostRepo) ExistDiary(user_id int64, source string) (exist bool, err err
 	}
 	return
 }
+
+func (r *PostRepo) GetDiaryList(user_id int64) (posts []model.Post, err error) {
+	err = r.DB.Model(&model.Post{}).Where("type = 'diary' AND user_id = ?", user_id).Order("id DESC").Find(&posts).Error
+	return posts, err
+}

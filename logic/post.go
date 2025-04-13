@@ -192,7 +192,7 @@ func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (re
 		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
 	// 如果是周记打卡，不允许用户自己删除
-	if post.Type == "diary" && post.UserID == operatorID {
+	if post.Type == "diary" && req.OperatorRole < global.ROLE_ADMIN {
 		zlog.CtxErrorf(ctx, "周记打卡不允许用户自己删除: %v", err)
 		return resp, response.ErrResp(err, response.DIARY_CANT_DELETE)
 	}
@@ -640,4 +640,30 @@ func GetWeekCode() string {
 	// 格式化周数
 	weekCode := fmt.Sprintf("%d-%d-%d", year, month, week)
 	return weekCode
+}
+
+func (l *PostLogic) GetDiaryList(ctx context.Context, req types.GetDiaryListReq) (resp types.GetDiaryListResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// id 转化为 int64
+	userID, err := strconv.ParseInt(req.UserID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 查询周记列表
+	var Posts []model.Post
+	Posts, err = repo.NewPostRepo(global.DB).GetDiaryList(userID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询周记列表失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 放入resp
+	for _, post := range Posts {
+		resp.Posts = append(resp.Posts, types.DiaryInfo{
+			PostID: post.ID,
+			Source: post.Source,
+		})
+	}
+	resp.Length = len(resp.Posts)
+	return resp, nil
 }

@@ -177,3 +177,17 @@ type SetPostFeatureReq struct {
 
 type SetPostFeatureResp struct {
 }
+
+type GetDiaryListReq struct {
+	UserID string `form:"user_id"`
+}
+
+type DiaryInfo struct {
+	PostID int64  `json:"post_id,string"`
+	Source string `json:"source"`
+}
+
+type GetDiaryListResp struct {
+	Posts  []DiaryInfo `json:"posts"`
+	Length int         `json:"length"`
+}

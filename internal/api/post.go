@@ -179,3 +179,14 @@ func SetPostFeature(c *gin.Context) {
 	resp, err := logic.NewPostLogic().SetPostFeature(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func GetDiaryList(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetDiaryListReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "获取个人周记列表请求: %v", req)
+	resp, err := logic.NewPostLogic().GetDiaryList(ctx, req)
+	response.Response(c, resp, err)
+}

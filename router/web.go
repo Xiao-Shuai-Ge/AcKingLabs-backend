@@ -87,5 +87,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/post-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMorePosts)
 
 		rg.POST("/feature", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
+
+		rg.GET("/diary-list", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetDiaryList)
 	})
 }
