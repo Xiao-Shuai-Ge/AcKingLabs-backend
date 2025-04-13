@@ -3,6 +3,7 @@ module tgwp
 go 1.22.3
 
 require (
+	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/fsnotify/fsnotify v1.7.0

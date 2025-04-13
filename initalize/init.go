@@ -34,6 +34,9 @@ func Init() {
 	// 开启定时任务
 	Cron()
 
+	// 初始化OSS服务
+	InitOSS()
+
 	// 对命令行参数进行处理
 	flags.Run()
 }

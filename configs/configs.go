@@ -9,6 +9,7 @@ type Config struct {
 	Redis RedisConfig       `mapstructure:"redis"`
 	Email EmailConfig       `mapstructure:"email"`
 	JWT   JWTConfig         `mapstructure:"jwt"`
+	Oss   OssConfig         `mapstructure:"oss"`
 }
 
 type ApplicationConfig struct {
@@ -51,4 +52,11 @@ type JWTConfig struct {
 type KafkaConfig struct {
 	host string `mapstructure:"host"`
 	port int    `mapstructure:"port"`
+}
+
+type OssConfig struct {
+	Endpoint        string `mapstructure:"endpoint"`
+	AccessKeyID     string `mapstructure:"accessKeyID"`
+	AccessKeySecret string `mapstructure:"accessKeySecret"`
+	BucketName      string `mapstructure:"bucketName"`
 }

@@ -20,6 +20,7 @@ type RouteManager struct {
 	CommonRoutes *gin.RouterGroup //通用功能相关的路由组
 	UserRoutes   *gin.RouterGroup // 用户相关的路由组
 	PostRoutes   *gin.RouterGroup
+	FileRoutes   *gin.RouterGroup
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -29,12 +30,17 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		CommonRoutes: router.Group("/api/common"), //通用功能相关的路由组
 		UserRoutes:   router.Group("/api/user"),   // 用户相关的路由组
 		PostRoutes:   router.Group("/api/post"),
+		FileRoutes:   router.Group("/api/file"),
 	}
 }
 
 // RegisterCommonRoutes 通用功能相关的路由组
 func (rm *RouteManager) RegisterCommonRoutes(handler PathHandler) {
 	handler(rm.CommonRoutes)
+}
+
+func (rm *RouteManager) RegisterFileRoutes(handler PathHandler) {
+	handler(rm.FileRoutes)
 }
 
 // RegisterLoginRoutes 注册登录相关的路由处理函数
@@ -63,6 +69,8 @@ func (rm *RouteManager) RegisterMiddleware(group string, middleware Middleware) 
 		rm.UserRoutes.Use(middleware())
 	case "diary":
 		rm.PostRoutes.Use(middleware())
+	case "file":
+		rm.FileRoutes.Use(middleware())
 	}
 }
 
