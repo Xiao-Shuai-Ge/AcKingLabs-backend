@@ -27,6 +27,14 @@ func (r *PostRepo) CreatePost(post model.Post) error {
 	return r.DB.Create(&post).Error
 }
 
+func (r *PostRepo) UpdatePost(post model.Post) error {
+	return r.DB.Save(&post).Error
+}
+
+func (r *PostRepo) DeletePost(post model.Post) error {
+	return r.DB.Delete(&post).Error
+}
+
 func (r *PostRepo) GetPostDetail(id int64) (model.Post, error) {
 	var post model.Post
 	err := r.DB.First(&post, id).Error
@@ -165,4 +173,28 @@ func (r *PostRepo) GetMoreDiaryByUser(user_id int64, before int64, count int) ([
 	var posts []model.Post
 	err := r.DB.Model(&model.Post{}).Where("type = 'diary' AND user_id = ? AND id < ? ", user_id, before).Order("id DESC").Limit(count).Find(&posts).Error
 	return posts, err
+}
+
+func (r *PostRepo) SetPostFeature(post_id int64) (err error) {
+	result := r.DB.Model(&model.Post{}).Where("id = ? AND is_featured = 0", post_id).Update("is_featured", true)
+	err = result.Error
+	if result.RowsAffected == 0 {
+		zlog.Errorf("已经是精选状态: %v", err)
+		err = errors.New("已经是精选状态")
+	}
+	return err
+}
+
+func (r *PostRepo) ExistDiary(user_id int64, source string) (exist bool, err error) {
+	var count int64
+	err = r.DB.Model(&model.Post{}).Where("type = 'diary' AND user_id = ? AND source = ?", user_id, source).Count(&count).Error
+	if err != nil {
+		return
+	}
+	if count > 0 {
+		exist = true
+	} else {
+		exist = false
+	}
+	return
 }

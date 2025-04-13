@@ -32,18 +32,29 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 如果是周记打卡，先检查时间是否正确
 	if req.Type == "diary" {
+		// 如果是周记打卡，先检查时间是否正确
 		req.Source = GetWeekCode()
 		if len(req.Source) == 0 {
 			zlog.CtxErrorf(ctx, "周记打卡时间错误: %v", err)
 			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 		}
 		zlog.CtxInfof(ctx, "解析出打卡周数: %s", req.Source)
+		// 判断周记打卡是否已经存在
+		var exist bool
+		exist, err = repo.NewPostRepo(global.DB).ExistDiary(userID, req.Source)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "查询周记打卡是否存在失败: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+		if exist {
+			zlog.CtxErrorf(ctx, "周记打卡已经存在: %v", err)
+			return resp, response.ErrResp(err, response.DIARY_ALREADY_EXIST)
+		}
 	}
 	// 判断数据范围
 	// 1. 标题不能超过 30 个字符
-	if len(req.Title) > 30 {
+	if utf8.RuneCountInString(req.Title) > 30 {
 		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
@@ -81,6 +92,116 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	resp.ID = id
+	// 给作者加 XP
+	addXp := 4
+	if req.IsPrivate == false {
+		addXp = 8
+	}
+	err = repo.NewUserRepo(global.DB).AddUserXp(userID, addXp)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "给作者加 XP 失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	return
+}
+
+// EditPost 编辑帖子
+func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp types.EditPostResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 判断数据范围
+	// 1. 标题不能超过 30 个字符
+	if utf8.RuneCountInString(req.Title) > 30 {
+		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 2. 内容不能超过 5000 个字符
+	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
+	if utf8.RuneCountInString(req.Content) > 5000 {
+		zlog.CtxErrorf(ctx, "内容不能超过 5000 个字: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 3. 除了周记打卡可以私密，其他类型都不可以私密
+	if req.Type != "diary" && req.IsPrivate {
+		zlog.CtxErrorf(ctx, "非周记打卡不能私密: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 4. 不允许出现不存在的类型
+	if !global.TYPE_SET[req.Type] {
+		zlog.CtxErrorf(ctx, "不存在的类型: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 拿取原帖子
+	post, err := repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询原帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 判断是否有权限编辑
+	if post.UserID != operatorID && !(req.OperatorRole >= global.ROLE_ADMIN) {
+		zlog.CtxErrorf(ctx, "非作者或管理员无权编辑帖子: %v", err)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	// 更新帖子
+	post.Title = req.Title
+	post.Content = req.Content
+	post.Type = req.Type
+	post.Source = req.Source
+	post.IsPrivate = req.IsPrivate
+	err = repo.NewPostRepo(global.DB).UpdatePost(post)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "创建帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	return
+}
+
+// DeletePost 编辑帖子
+func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (resp types.DeletePostResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 拿取原帖子
+	post, err := repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询原帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 判断是否有权限删除
+	if post.UserID != operatorID && !(req.OperatorRole >= global.ROLE_ADMIN) {
+		zlog.CtxErrorf(ctx, "非作者或管理员无权编辑帖子: %v", err)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	// 如果是周记打卡，不允许用户自己删除
+	if post.Type == "diary" && post.UserID == operatorID {
+		zlog.CtxErrorf(ctx, "周记打卡不允许用户自己删除: %v", err)
+		return resp, response.ErrResp(err, response.DIARY_CANT_DELETE)
+	}
+	// 删除帖子
+	err = repo.NewPostRepo(global.DB).DeletePost(post)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
 	return
 }
 
@@ -332,12 +453,12 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 					zlog.CtxErrorf(ctx, "标记管理员点赞失败: %v", err)
 					return resp, response.ErrResp(err, response.DATABASE_ERROR)
 				}
-				// 增加经验
-				err = repo.NewUserRepo(global.DB).AddUserXp(comment.UserID, 2)
-				if err != nil {
-					zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
-					return resp, response.ErrResp(err, response.DATABASE_ERROR)
-				}
+				// 增加经验 (合理性有待商榷，暂时取消)
+				//err = repo.NewUserRepo(global.DB).AddUserXp(comment.UserID, 2)
+				//if err != nil {
+				//	zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
+				//	return resp, response.ErrResp(err, response.DATABASE_ERROR)
+				//}
 			}
 		}
 		// 点赞
@@ -459,9 +580,38 @@ func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq)
 	return
 }
 
+func (l *PostLogic) SetPostFeature(ctx context.Context, req types.SetPostFeatureReq) (resp types.SetPostFeatureResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 数据库操作
+	err = repo.NewPostRepo(global.DB).SetPostFeature(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "设置帖子为精华失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 获得作者id
+	post, err := repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 为作者增加经验
+	err = repo.NewUserRepo(global.DB).AddUserXp(post.UserID, 20)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	return
+}
+
 func GetWeekCode() string {
 	timeNow := time.Now()
-	timeNow = time.UnixMilli(1744081921000)
+	//timeNow = time.UnixMilli(1743914958000)
 	timestamp := timeNow.UnixMilli()
 
 	// 打卡时间为每周的周日中午到周二的中午，为了先确定当前周数，先把时间减去 2 天

@@ -16,6 +16,34 @@ type CreatePostResp struct {
 	ID int64 `json:"id,string"`
 }
 
+type EditPostReq struct {
+	OperatorID   string `json:"-"`
+	OperatorRole int    `json:"-"`
+
+	PostID string `json:"post_id"`
+
+	Title   string `json:"title"`
+	Content string `json:"content"`
+
+	Type   string `json:"type"`
+	Source string `json:"source"`
+
+	IsPrivate bool `json:"is_private"`
+}
+
+type EditPostResp struct {
+}
+
+type DeletePostReq struct {
+	OperatorID   string `json:"-"`
+	OperatorRole int    `json:"-"`
+
+	PostID string `json:"post_id"`
+}
+
+type DeletePostResp struct {
+}
+
 type GetPostDetailReq struct {
 	OperatorID   string `form:"-"`
 	OperatorRole int    `form:"-"`
@@ -141,4 +169,11 @@ type PostInfo struct {
 type GetMorePostsResp struct {
 	Posts  []PostInfo `json:"posts"`
 	Length int        `json:"length"`
+}
+
+type SetPostFeatureReq struct {
+	PostID string `json:"post_id"`
+}
+
+type SetPostFeatureResp struct {
 }

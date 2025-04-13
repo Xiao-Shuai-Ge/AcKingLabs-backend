@@ -67,19 +67,25 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	// 注册帖子相关路由组
 	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
+		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
+		rg.POST("/edit", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.EditPost)
+		rg.POST("/delete", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.DeletePost)
+
 		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
+		rg.GET("/detail-visitor", middleware.Limiter(rate.Every(time.Second)*10, 10), api.GetPostDetailVisitor)
 
 		rg.GET("/like-post", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
-		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*20, 50), middleware.Authentication(global.ROLE_USER), api.LikePost)
+		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikePost)
 		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 
 		rg.POST("/comment", middleware.Limiter(rate.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreateComment)
 		rg.GET("/comment-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMoreComments)
 
 		rg.GET("/like-comment", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikeComment)
-		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*20, 50), middleware.Authentication(global.ROLE_USER), api.LikeComment)
+		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikeComment)
 
 		rg.GET("/post-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMorePosts)
+
+		rg.POST("/feature", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
 	})
 }

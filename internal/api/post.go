@@ -22,6 +22,34 @@ func CreatePost(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// EditPost 编辑帖子
+func EditPost(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.EditPostReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	req.OperatorRole = jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "编辑帖子请求: %v", req)
+	resp, err := logic.NewPostLogic().EditPost(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// DeletePost 删除帖子
+func DeletePost(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeletePostReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	req.OperatorRole = jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "删除帖子请求: %v", req)
+	resp, err := logic.NewPostLogic().DeletePost(ctx, req)
+	response.Response(c, resp, err)
+}
+
 // GetPostDetail 获取帖子详情
 func GetPostDetail(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
@@ -32,6 +60,20 @@ func GetPostDetail(c *gin.Context) {
 	req.OperatorID = jwtUtils.GetUserId(c)
 	req.OperatorRole = jwtUtils.GetRole(c)
 	zlog.CtxInfof(ctx, "获取帖子详情请求: %v", req)
+	resp, err := logic.NewPostLogic().GetPostDetail(ctx, req)
+	response.Response(c, resp, err)
+}
+
+func GetPostDetailVisitor(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetPostDetailReq](c)
+	if err != nil {
+		return
+	}
+	// 和GetPostDetailReq一致，但id设置为0，表示访客
+	req.OperatorID = "0"
+	req.OperatorRole = 0
+	zlog.CtxInfof(ctx, "获取帖子详情请求(游客): %v", req)
 	resp, err := logic.NewPostLogic().GetPostDetail(ctx, req)
 	response.Response(c, resp, err)
 }
@@ -124,5 +166,16 @@ func GetMorePosts(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "获取更多帖子请求: %v", req)
 	resp, err := logic.NewPostLogic().GetMorePosts(ctx, req)
+	response.Response(c, resp, err)
+}
+
+func SetPostFeature(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.SetPostFeatureReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "设置帖子精华请求: %v", req)
+	resp, err := logic.NewPostLogic().SetPostFeature(ctx, req)
 	response.Response(c, resp, err)
 }
