@@ -22,7 +22,7 @@ func UploadFile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	resp := types.UploadFileResp{}
 	// 限制上传文件大小（示例为10MB）
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10<<20)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10*1024*1024)
 
 	// 获得上传文件
 	file, header, err := c.Request.FormFile("file")

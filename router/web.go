@@ -42,7 +42,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/test", middleware.Limiter(rate.Every(time.Second)*5, 5), api.Template)
+		rg.POST("/test", middleware.Limiter(rate.Every(time.Hour)*1, 10), api.Template)
 	})
 
 	routeManager.RegisterFileRoutes(func(rg *gin.RouterGroup) {

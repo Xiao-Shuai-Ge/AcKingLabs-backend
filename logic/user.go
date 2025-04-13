@@ -192,8 +192,8 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "真实姓名长度必须在 [2,20] 之间")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	if len(req.Avatar) > 100 {
-		zlog.CtxErrorf(ctx, "头像 URL 长度不能超过 100")
+	if len(req.Avatar) > 255 {
+		zlog.CtxErrorf(ctx, "头像 URL 长度不能超过 255")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 年级在 [0,99]
