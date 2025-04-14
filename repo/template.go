@@ -3,6 +3,7 @@ package repo
 import (
 	"fmt"
 	"gorm.io/gorm"
+	"tgwp/model"
 )
 
 type TemplateRepo struct {
@@ -26,4 +27,9 @@ func (r *TemplateRepo) InsertData(data int64) (err error) {
 	//err=r.DB.Model(&model.Template{}).Create(&data).Error
 	fmt.Println(data)
 	return nil
+}
+
+func (r *TemplateRepo) GetUserInfo(user_id int64) (user *model.Ulearning, err error) {
+	err = r.DB.Model(&model.Ulearning{}).Where("user_id =?", user_id).First(&user).Error
+	return user, err
 }

@@ -43,8 +43,12 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/test", middleware.Limiter(rate.Every(time.Hour)*1, 10), api.Template)
+
+		rg.GET("/signin-list", middleware.Limiter(rate.Every(time.Minute)*5, 5), middleware.Authentication(global.ROLE_USER), api.SigninList)
+		rg.POST("/signin", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.Signin)
 	})
 
+	// 注册文件上传相关路由组
 	routeManager.RegisterFileRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/upload", middleware.Limiter(rate.Every(time.Minute)*3, 5), middleware.Authentication(global.ROLE_GUEST), api.UploadFile)
 	})

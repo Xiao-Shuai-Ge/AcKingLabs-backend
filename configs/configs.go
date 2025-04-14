@@ -3,13 +3,14 @@ package configs
 var Conf = new(Config)
 
 type Config struct {
-	App   ApplicationConfig `mapstructure:"app"`
-	Log   LoggerConfig      `mapstructure:"log"`
-	DB    DBConfig          `mapstructure:"database"`
-	Redis RedisConfig       `mapstructure:"redis"`
-	Email EmailConfig       `mapstructure:"email"`
-	JWT   JWTConfig         `mapstructure:"jwt"`
-	Oss   OssConfig         `mapstructure:"oss"`
+	App       ApplicationConfig `mapstructure:"app"`
+	Log       LoggerConfig      `mapstructure:"log"`
+	DB        DBConfig          `mapstructure:"database"`
+	Redis     RedisConfig       `mapstructure:"redis"`
+	Email     EmailConfig       `mapstructure:"email"`
+	JWT       JWTConfig         `mapstructure:"jwt"`
+	Oss       OssConfig         `mapstructure:"oss"`
+	Ulearning UlearningConfig   `mapstructure:"ulearning"`
 }
 
 type ApplicationConfig struct {
@@ -59,4 +60,12 @@ type OssConfig struct {
 	AccessKeyID     string `mapstructure:"accessKeyID"`
 	AccessKeySecret string `mapstructure:"accessKeySecret"`
 	BucketName      string `mapstructure:"bucketName"`
+}
+
+type UlearningConfig struct {
+	SigninOperation     string `mapstructure:"signinOperation"`
+	GetSigninDetail     string `mapstructure:"getSigninDetail"`
+	GetCourseActivities string `mapstructure:"getCourseActivities"`
+	GetAllCourses       string `mapstructure:"getAllCourses"`
+	Login               string `mapstructure:"login"`
 }

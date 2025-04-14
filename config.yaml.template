@@ -32,3 +32,16 @@ email:
 
 jwt:
   secret: ***
+
+oss:
+  endpoint:
+  accessKeyID:
+  accessKeySecret:
+  bucketName:
+
+ulearning:
+  signinOperation:
+  getSigninDetail:
+  getCourseActivities:
+  getAllCourses:
+  login:
