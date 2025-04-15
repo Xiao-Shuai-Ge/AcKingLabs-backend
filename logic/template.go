@@ -161,6 +161,120 @@ func (l *TemplateLogic) Signin(ctx context.Context, req types.SigninReq) (resp t
 	return
 }
 
+func (l *TemplateLogic) SigninTeacher(ctx context.Context, req types.SigninTeacherReq) (resp types.SigninTeacherResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// id 转 int64
+	userID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 从数据库拿去用户账号密码
+	userInfo, err := repo.NewTemplateRepo(global.DB).GetUserInfo(userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户 %d 不在白名单中，权限不足", userID)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	} else if userInfo.Level < 1 {
+		zlog.CtxErrorf(ctx, "用户 %d 权限不足", userID)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	zlog.CtxDebugf(ctx, "用户 %d 权限为 %d", userID, userInfo.Level)
+	// 模拟登录
+	token, UserID, err := Login(userInfo.UserName, userInfo.Password)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "模拟登录失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", token, userID)
+
+	// 登录老师账号
+	zlog.CtxDebugf(ctx, "开始模拟登录老师账号 %v %v", global.Config.Ulearning.Teacher, global.Config.Ulearning.Password)
+	teacherToken, TeacherID, err := Login(global.Config.Ulearning.Teacher, global.Config.Ulearning.Password)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "登录老师账号失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", teacherToken, TeacherID)
+
+	// 获取活动信息
+	var signinDetailResp SigninDetailResp
+	signinDetailResp, err = GetSigninDetail(token, req.RelationID)
+	if err != nil {
+		zlog.Errorf("获取活动信息失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	zlog.CtxDebugf(ctx, "获取活动信息成功: %v", signinDetailResp)
+	// 嘿嘿嘿
+	var signinTeacherOPResp SigninTeacherOPResp
+	signinTeacherOPResp, err = SigninTeacherOP(SigninTeacherOPData{
+		token:     teacherToken,
+		relatedID: req.RelationID,
+		UserID:    UserID,
+	})
+	if err != nil || signinTeacherOPResp.Status != "success" {
+		zlog.CtxErrorf(ctx, "签到失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	zlog.CtxInfof(ctx, "签到成功: %v", signinTeacherOPResp.Msg)
+
+	resp.Message = signinTeacherOPResp.Msg
+	return
+}
+
+type SigninTeacherOPData struct {
+	token     string
+	relatedID int
+	UserID    int
+}
+
+type User struct {
+	UserID int `json:"userID"`
+	Status int `json:"status"`
+}
+
+type SigninTeacherOPReq struct {
+	AttendanceID int    `json:"attendanceID"`
+	Users        []User `json:"users"`
+}
+
+type SigninTeacherOPResp struct {
+	Msg    string `json:"msg"`
+	Status string `json:"status"`
+}
+
+func SigninTeacherOP(data SigninTeacherOPData) (resp SigninTeacherOPResp, err error) {
+	zlog.CtxDebugf(context.Background(), "开始签到: %v", data)
+	user := User{
+		UserID: data.UserID,
+		Status: 1,
+	}
+	users := []User{user}
+	var reqData = SigninTeacherOPReq{
+		AttendanceID: data.relatedID,
+		Users:        users,
+	}
+	jsonData, _ := json.Marshal(reqData)
+
+	zlog.CtxDebugf(context.Background(), "请求签到数据: %s", string(jsonData))
+
+	req, _ := http.NewRequest("POST", fmt.Sprintf(global.Config.Ulearning.SigninTeacherOperation), bytes.NewBuffer(jsonData))
+	req.Header.Add("Authorization", data.token)
+	req.Header.Add("Content-Type", "application/json")
+
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		zlog.Errorf("请求签到失败: %v", err)
+		return
+	}
+	defer response.Body.Close()
+	body, _ := ioutil.ReadAll(response.Body)
+
+	zlog.CtxDebugf(context.Background(), "签到结果: %s", string(body))
+	json.Unmarshal([]byte(body), &resp)
+
+	return
+}
+
 type SigninOperationData struct {
 	attendanceType int
 	token          string

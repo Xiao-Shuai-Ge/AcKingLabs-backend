@@ -54,3 +54,15 @@ func Signin(c *gin.Context) {
 	resp, err := logic.NewTemplateLogic().Signin(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func SigninTeacher(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.SigninTeacherReq](c)
+	req.ID = jwtUtils.GetUserId(c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "sign request: %v", req)
+	resp, err := logic.NewTemplateLogic().SigninTeacher(ctx, req)
+	response.Response(c, resp, err)
+}

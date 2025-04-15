@@ -43,4 +43,5 @@ type Ulearning struct {
 	UserID   int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;uniqueIndex:idx_post_user_unique"`
 	UserName string `json:"user_name" gorm:"column:user_name;type:varchar(255);comment:用户名;"`
 	Password string `json:"password" gorm:"column:password;type:varchar(255);comment:密码;"`
+	Level    int    `json:"level" gorm:"column:level;type:int;comment:等级;"`
 }

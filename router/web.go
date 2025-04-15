@@ -44,8 +44,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/test", middleware.Limiter(rate.Every(time.Hour)*1, 10), api.Template)
 
-		rg.GET("/signin-list", middleware.Limiter(rate.Every(time.Minute)*5, 5), middleware.Authentication(global.ROLE_USER), api.SigninList)
-		rg.POST("/signin", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.Signin)
+		rg.GET("/signin-list", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninList)
+		rg.POST("/signin", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.Signin)
+		rg.POST("/signin-teacher", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninTeacher)
 	})
 
 	// 注册文件上传相关路由组

@@ -33,3 +33,13 @@ type SigninReq struct {
 type SigninResp struct {
 	Message string `json:"message"`
 }
+
+type SigninTeacherReq struct {
+	ID         string `json:"-"`
+	UserID     int    `json:"user_id"`
+	RelationID int    `json:"relation_id"`
+}
+
+type SigninTeacherResp struct {
+	Message string `json:"message"`
+}

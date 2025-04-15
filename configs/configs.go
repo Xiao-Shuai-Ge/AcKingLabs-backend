@@ -63,9 +63,12 @@ type OssConfig struct {
 }
 
 type UlearningConfig struct {
-	SigninOperation     string `mapstructure:"signinOperation"`
-	GetSigninDetail     string `mapstructure:"getSigninDetail"`
-	GetCourseActivities string `mapstructure:"getCourseActivities"`
-	GetAllCourses       string `mapstructure:"getAllCourses"`
-	Login               string `mapstructure:"login"`
+	SigninOperation        string `mapstructure:"signinOperation"`
+	GetSigninDetail        string `mapstructure:"getSigninDetail"`
+	GetCourseActivities    string `mapstructure:"getCourseActivities"`
+	GetAllCourses          string `mapstructure:"getAllCourses"`
+	SigninTeacherOperation string `mapstructure:"signinTeacherOperation"`
+	Login                  string `mapstructure:"login"`
+	Teacher                string `mapstructure:"teacher"`
+	Password               string `mapstructure:"password"`
 }
