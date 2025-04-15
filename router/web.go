@@ -74,6 +74,12 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
 	})
 
+	routeManager.RegisterMessageRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("/count", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageCount)
+		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageList)
+		rg.POST("/read", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.MarkReadMessage)
+	})
+
 	// 注册帖子相关路由组
 	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)

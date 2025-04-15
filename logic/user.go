@@ -250,6 +250,7 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 
 // SetUserRole 设置用户权限
 func (l *UserLogic) SetUserRole(ctx context.Context, req types.SetUserRoleReq) (resp types.SetUserRoleResp, err error) {
+	defer utils.RecordTime(time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {

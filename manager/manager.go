@@ -16,21 +16,23 @@ type Middleware func() gin.HandlerFunc
 
 // RouteManager 管理不同的路由组，按业务功能分组
 type RouteManager struct {
-	LoginRoutes  *gin.RouterGroup // 登录相关的路由组
-	CommonRoutes *gin.RouterGroup //通用功能相关的路由组
-	UserRoutes   *gin.RouterGroup // 用户相关的路由组
-	PostRoutes   *gin.RouterGroup
-	FileRoutes   *gin.RouterGroup
+	LoginRoutes   *gin.RouterGroup // 登录相关的路由组
+	CommonRoutes  *gin.RouterGroup //通用功能相关的路由组
+	UserRoutes    *gin.RouterGroup // 用户相关的路由组
+	MessageRoutes *gin.RouterGroup
+	PostRoutes    *gin.RouterGroup
+	FileRoutes    *gin.RouterGroup
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
 func NewRouteManager(router *gin.Engine) *RouteManager {
 	return &RouteManager{
-		LoginRoutes:  router.Group("/api/login"),  // 初始化登录路由组
-		CommonRoutes: router.Group("/api/common"), //通用功能相关的路由组
-		UserRoutes:   router.Group("/api/user"),   // 用户相关的路由组
-		PostRoutes:   router.Group("/api/post"),
-		FileRoutes:   router.Group("/api/file"),
+		LoginRoutes:   router.Group("/api/login"),  // 初始化登录路由组
+		CommonRoutes:  router.Group("/api/common"), //通用功能相关的路由组
+		UserRoutes:    router.Group("/api/user"),   // 用户相关的路由组
+		MessageRoutes: router.Group("/api/message"),
+		PostRoutes:    router.Group("/api/post"),
+		FileRoutes:    router.Group("/api/file"),
 	}
 }
 
@@ -53,6 +55,10 @@ func (rm *RouteManager) RegisterUserRoutes(handler PathHandler) {
 	handler(rm.UserRoutes)
 }
 
+func (rm *RouteManager) RegisterMessageRoutes(handler PathHandler) {
+	handler(rm.MessageRoutes)
+}
+
 func (rm *RouteManager) RegisterPostRoutes(handler PathHandler) {
 	handler(rm.PostRoutes)
 }
@@ -67,6 +73,8 @@ func (rm *RouteManager) RegisterMiddleware(group string, middleware Middleware) 
 		rm.CommonRoutes.Use(middleware())
 	case "user":
 		rm.UserRoutes.Use(middleware())
+	case "message":
+		rm.MessageRoutes.Use(middleware())
 	case "diary":
 		rm.PostRoutes.Use(middleware())
 	case "file":

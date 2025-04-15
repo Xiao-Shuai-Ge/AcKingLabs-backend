@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"tgwp/log/zlog"
 	"time"
+	"unicode"
 )
 
 /*
@@ -136,4 +138,22 @@ func Abs[T CanAbs](value T) T {
 		return -value
 	}
 	return value
+}
+
+// TruncateString 截断字符串
+func TruncateString(s string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return strings.TrimSpace(s)
+	}
+	trimmed := strings.TrimSpace(string(runes[:maxLen]))
+	if len(trimmed) == 0 {
+		return ""
+	}
+	// 避免结尾是空格或标点时重复加...
+	lastChar := trimmed[len(trimmed)-1]
+	if unicode.IsPunct(rune(lastChar)) || unicode.IsSpace(rune(lastChar)) {
+		return trimmed + ".."
+	}
+	return trimmed + "..."
 }

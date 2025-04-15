@@ -20,3 +20,16 @@ type User struct {
 	Role int `json:"role" gorm:"column:role;type:int;comment:权限等级"`
 	// 0: 游客(未实名) 1:普通用户 2.正式成员 3:管理员 4:超级管理员
 }
+
+type Message struct {
+	ID int64 `json:"id" gorm:"column:id;primaryKey;type:bigint;type:bigint"`
+	TimeModel
+	UserID   int64 `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;index:idx_user_id"`
+	SenderID int64 `json:"sender_id" gorm:"column:sender_id;type:bigint;comment:发送者"`
+
+	Type    string `json:"type" gorm:"column:type;type:varchar(63);comment:类型"`
+	Content string `json:"content" gorm:"column:content;type:varchar(255);comment:内容"`
+	Url     string `json:"url" gorm:"column:url;type:varchar(255);comment:链接"`
+
+	IsRead bool `json:"is_read" gorm:"column:is_read;type:bool;comment:是否已读"`
+}

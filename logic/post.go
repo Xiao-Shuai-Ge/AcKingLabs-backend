@@ -16,6 +16,10 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	REDIS_LIKE_MESSAGE = "like_message:%d:%d"
+)
+
 type PostLogic struct {
 }
 
@@ -312,6 +316,47 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 		}
 		resp.IsLike = true
 	}
+	// 发送点赞通知
+	// 先用redis判断两小时内是否有过点赞通知，如果有，则不再发送
+	key := fmt.Sprintf(REDIS_LIKE_MESSAGE, postID, operatorID)
+	if global.Rdb.Exists(ctx, key).Val() == 1 {
+		zlog.CtxInfof(ctx, "两小时内有过点赞通知，不再发送")
+		return
+	}
+	// redis 记录点赞通知
+	err = global.Rdb.Set(ctx, key, "1", time.Hour*2).Err()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v", err)
+		return resp, response.ErrResp(err, response.REDIS_ERROR)
+	}
+	// 获取帖子详情
+	var post model.Post
+	post, err = repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 发送通知
+	messageID := global.SnowflakeNode.Generate().Int64()
+	var url string
+	if post.Type == "diary" {
+		url = fmt.Sprintf("/diary/%d", post.ID)
+	} else {
+		url = fmt.Sprintf("/post/%d", post.ID)
+	}
+	message := model.Message{
+		ID:       messageID,
+		UserID:   post.UserID,
+		SenderID: operatorID,
+		Type:     "like",
+		Content:  fmt.Sprintf("赞了你的帖子 《%s》", post.Title),
+		Url:      url,
+		IsRead:   false,
+	}
+	err = repo.NewMessageRepo(global.DB).SendMessage(message)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
+	}
 	return
 }
 
@@ -371,6 +416,40 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	resp.ID = id
+	// 发送评论通知
+	// 获取帖子详情
+	var post model.Post
+	post, err = repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 简化评论内容 (去掉换行符)
+	contentShort := comment.Content
+	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
+	contentShort = utils.TruncateString(contentShort, 20)
+	// 发送通知
+	messageID := global.SnowflakeNode.Generate().Int64()
+	var url string
+	if post.Type == "diary" {
+		url = fmt.Sprintf("/diary/%d", post.ID)
+	} else {
+		url = fmt.Sprintf("/post/%d", post.ID)
+	}
+	message := model.Message{
+		ID:       messageID,
+		UserID:   post.UserID,
+		SenderID: userID,
+		Type:     "comment",
+		Content:  fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort),
+		Url:      url,
+		IsRead:   false,
+	}
+	err = repo.NewMessageRepo(global.DB).SendMessage(message)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
+	}
+
 	return
 }
 
@@ -474,6 +553,60 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 		}
 		resp.IsLike = true
+	}
+	// 发送点赞通知
+	// 先用redis判断两小时内是否有过点赞通知，如果有，则不再发送
+	key := fmt.Sprintf(REDIS_LIKE_MESSAGE, commentID, operatorID)
+	if global.Rdb.Exists(ctx, key).Val() == 1 {
+		zlog.CtxInfof(ctx, "两小时内有过点赞通知，不再发送")
+		return
+	}
+	// redis 记录点赞通知
+	err = global.Rdb.Set(ctx, key, "1", time.Hour*2).Err()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v", err)
+		return resp, response.ErrResp(err, response.REDIS_ERROR)
+	}
+	// 获取评论详情
+	var comment model.Comment
+	comment, err = repo.NewPostRepo(global.DB).GetCommentDetail(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询评论详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 获取帖子详情
+	var post model.Post
+	post, err = repo.NewPostRepo(global.DB).GetPostDetail(comment.PostID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 简化评论内容 (去掉换行符)
+	contentShort := comment.Content
+	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
+	contentShort = utils.TruncateString(contentShort, 20)
+	// 发送通知
+	messageID := global.SnowflakeNode.Generate().Int64()
+	var url string
+	if post.Type == "diary" {
+		url = fmt.Sprintf("/diary/%d", post.ID)
+	} else {
+		url = fmt.Sprintf("/post/%d", post.ID)
+	}
+	message := model.Message{
+		ID:       messageID,
+		UserID:   comment.UserID,
+		SenderID: operatorID,
+		Type:     "like",
+		Content:  fmt.Sprintf("赞了你的评论 [ %s ]", contentShort),
+		Url:      url,
+		IsRead:   false,
+	}
+	err = repo.NewMessageRepo(global.DB).SendMessage(message)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
+		// 发送失败，但不影响实际点赞
+		err = nil
 	}
 	return
 }
