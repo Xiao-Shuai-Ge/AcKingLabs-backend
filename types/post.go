@@ -89,9 +89,10 @@ type GetLikePostResp struct {
 }
 
 type CreateCommentReq struct {
-	UserID  string `json:"-"`
-	PostID  string `json:"post_id"`
-	Content string `json:"content"`
+	UserID   string `json:"-"`
+	PostID   string `json:"post_id"`
+	Content  string `json:"content"`
+	FatherID string `json:"father_id"`
 }
 
 type CreateCommentResp struct {
@@ -99,7 +100,8 @@ type CreateCommentResp struct {
 }
 
 type GetMoreCommentsReq struct {
-	PostID   string `form:"post_id"`
+	ID       string `form:"id"`
+	IsChild  bool   `form:"is_child"`
 	BeforeID string `form:"before_id"`
 	Count    int    `form:"count"`
 }

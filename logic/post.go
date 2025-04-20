@@ -2,7 +2,9 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"tgwp/global"
@@ -391,6 +393,11 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	fatherID, err := strconv.ParseInt(req.FatherID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.FatherID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
@@ -401,14 +408,25 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		zlog.CtxErrorf(ctx, "评论内容不能超过 1000 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	// 获取帖子详情，如果帖子不存在，则返回错误
+	var post model.Post
+	post, err = repo.NewPostRepo(global.DB).GetPostDetail(postID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "帖子不存在: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
 	// 创建评论
 	id := global.SnowflakeNode.Generate().Int64()
 	comment := model.Comment{
-		ID:      id,
-		PostID:  postID,
-		UserID:  userID,
-		Content: req.Content,
-		Likes:   0,
+		ID:       id,
+		PostID:   postID,
+		FatherID: fatherID,
+		UserID:   userID,
+		Content:  req.Content,
+		Likes:    0,
 	}
 	err = repo.NewPostRepo(global.DB).CreateComment(comment)
 	if err != nil {
@@ -417,13 +435,6 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	}
 	resp.ID = id
 	// 发送评论通知
-	// 获取帖子详情
-	var post model.Post
-	post, err = repo.NewPostRepo(global.DB).GetPostDetail(postID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
-		return resp, response.ErrResp(err, response.DATABASE_ERROR)
-	}
 	// 简化评论内容 (去掉换行符)
 	contentShort := comment.Content
 	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
@@ -436,29 +447,49 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	} else {
 		url = fmt.Sprintf("/post/%d", post.ID)
 	}
+	// 判断是几级评论，给出对应的提示
+	var content string
+	var receiverID int64
+	if fatherID == 0 {
+		content = fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort)
+		receiverID = userID
+	} else {
+		var fatherComment model.Comment
+		fatherComment, err = repo.NewPostRepo(global.DB).GetCommentDetail(fatherID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "查询父评论详情失败: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+		fatherContentShort := fatherComment.Content
+		fatherContentShort = strings.ReplaceAll(fatherContentShort, "\n", " ")
+		fatherContentShort = utils.TruncateString(fatherContentShort, 20)
+		content = fmt.Sprintf("在你的评论 [%s] 回复了: [%s]", fatherContentShort, contentShort)
+		receiverID = fatherComment.UserID
+	}
+	// 发送通知
 	message := model.Message{
 		ID:       messageID,
-		UserID:   post.UserID,
+		UserID:   receiverID,
 		SenderID: userID,
 		Type:     "comment",
-		Content:  fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort),
+		Content:  content,
 		Url:      url,
 		IsRead:   false,
 	}
 	err = repo.NewMessageRepo(global.DB).SendMessage(message)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
+		zlog.CtxErrorf(ctx, "发送评论通知失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
-
 	return
 }
 
 func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommentsReq) (resp types.GetMoreCommentsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	// ID 转化为 int64
-	postID, err := strconv.ParseInt(req.PostID, 10, 64)
+	ID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.PostID, err)
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	beforeID, err := strconv.ParseInt(req.BeforeID, 10, 64)
@@ -467,7 +498,13 @@ func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommen
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 从数据库中查询评论
-	comments, err := repo.NewPostRepo(global.DB).GetMoreComments(postID, beforeID, req.Count)
+	var comments []model.Comment
+	if req.IsChild {
+		comments, err = repo.NewPostRepo(global.DB).GetMoreChildComments(ID, beforeID, req.Count)
+	} else {
+		comments, err = repo.NewPostRepo(global.DB).GetMoreComments(ID, beforeID, req.Count)
+	}
+
 	if err != nil {
 		zlog.CtxErrorf(ctx, "查询评论失败: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)

@@ -44,6 +44,7 @@ type Comment struct {
 
 	Content     string `json:"content" gorm:"column:content;type:text;comment:内容"`
 	PostID      int64  `json:"post_id" gorm:"column:post_id;type:bigint;comment:帖子ID;index"`
+	FatherID    int64  `json:"father_id" gorm:"column:father_id;type:bigint;comment:父评论ID"`
 	UserID      int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID"`
 	Likes       int    `json:"likes" gorm:"not null;column:likes;type:int;comment:点赞数"`
 	IsAdminLike bool   `json:"is_admin_like" gorm:"not null;column:is_admin_like;type:bool;comment:是否有管理员点赞"`
