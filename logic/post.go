@@ -64,10 +64,10 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 2. 内容不能超过 5000 个字符
+	// 2. 内容不能超过 20000 个字符
 	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
-	if utf8.RuneCountInString(req.Content) > 5000 {
-		zlog.CtxErrorf(ctx, "内容不能超过 5000 个字: %v", err)
+	if utf8.RuneCountInString(req.Content) > 20000 {
+		zlog.CtxErrorf(ctx, "内容不能超过 20000 个字: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 除了周记打卡可以私密，其他类型都不可以私密
