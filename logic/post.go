@@ -108,6 +108,7 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		zlog.CtxErrorf(ctx, "给作者加 XP 失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+
 	return
 }
 
@@ -709,6 +710,66 @@ func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq)
 		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	// 数据库查询失败
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
+	for _, post := range posts {
+		// 截短内容
+		contentShort := post.Content
+		// 去掉换行符
+		contentShort = strings.ReplaceAll(contentShort, "\n", " ")
+		if len(contentShort) > 200 {
+			contentShort = contentShort[:200]
+		}
+		if post.IsPrivate {
+			contentShort = "......"
+		}
+		// 组装返回数据
+		resp.Posts = append(resp.Posts, types.PostInfo{
+			ID:           post.ID,
+			UserID:       post.UserID,
+			Title:        post.Title,
+			ContentShort: contentShort,
+			Type:         post.Type,
+			Source:       post.Source,
+			Likes:        post.Likes,
+			Comments:     post.Comments,
+			CreatedAt:    post.CreatedTime,
+			UpdatedAt:    post.UpdatedTime,
+
+			IsAdminLike: post.IsAdminLike,
+			IsPrivate:   post.IsPrivate,
+			IsFeatured:  post.IsFeatured,
+
+			Weight: post.Weight,
+		})
+	}
+	resp.Length = len(resp.Posts)
+	return
+}
+
+func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq) (resp types.GetPagePostsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// 分各种情况查询帖子
+	var posts []model.Post
+
+	if req.By == "popular" || req.By == "weight" || req.By == "hot" {
+		// 按热度排序
+		posts, err = repo.NewPostRepo(global.DB).GetPagePostByWeight(req.Type, req.Page, req.Count)
+	} else if req.By == "new" || req.By == "time" {
+		// 按最新排序
+		posts, err = repo.NewPostRepo(global.DB).GetPagePostByID(req.Type, req.Page, req.Count)
+	} else if req.By == "featured" {
+		// 精选
+		posts, err = repo.NewPostRepo(global.DB).GetPagePostByFeatured(req.Type, req.Page, req.Count)
+	} else {
+		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
 	// 数据库查询失败
 	if err != nil {
 		zlog.CtxErrorf(ctx, "查询帖子失败: %v", err)

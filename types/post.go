@@ -173,6 +173,20 @@ type GetMorePostsResp struct {
 	Length int        `json:"length"`
 }
 
+type GetPagePostsReq struct {
+	Type   string `form:"type"`
+	Source string `form:"source"`
+	Page   int    `form:"page"`
+	By     string `form:"by"`
+	Count  int    `form:"count"`
+	UserID string `form:"user_id"`
+}
+
+type GetPagePostsResp struct {
+	Posts  []PostInfo `json:"posts"`
+	Length int        `json:"length"`
+}
+
 type SetPostFeatureReq struct {
 	PostID string `json:"post_id"`
 }

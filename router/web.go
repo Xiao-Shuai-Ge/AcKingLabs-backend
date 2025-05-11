@@ -100,6 +100,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikeComment)
 
 		rg.GET("/post-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMorePosts)
+		rg.GET("/post-page", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetPagePosts)
 
 		rg.POST("/feature", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
 

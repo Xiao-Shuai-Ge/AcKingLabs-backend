@@ -28,8 +28,11 @@ const (
 
 var (
 	TYPE_SET = map[string]bool{
-		"diary":  true,
-		"answer": true,
+		"diary":    true,
+		"tutorial": true,
+		"solution": true,
+		"contest":  true,
+		"fun":      true,
 	}
 )
 

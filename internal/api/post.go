@@ -169,6 +169,18 @@ func GetMorePosts(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// GetPagePosts 按页获取帖子
+func GetPagePosts(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetPagePostsReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "获取更多帖子请求: %v", req)
+	resp, err := logic.NewPostLogic().GetPagePosts(ctx, req)
+	response.Response(c, resp, err)
+}
+
 func SetPostFeature(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.SetPostFeatureReq](c)
