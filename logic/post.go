@@ -452,7 +452,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	var receiverID int64
 	if fatherID == 0 {
 		content = fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort)
-		receiverID = userID
+		receiverID = post.UserID
 	} else {
 		var fatherComment model.Comment
 		fatherComment, err = repo.NewPostRepo(global.DB).GetCommentDetail(fatherID)
