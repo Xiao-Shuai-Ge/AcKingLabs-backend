@@ -345,7 +345,7 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
 	} else {
-		url = fmt.Sprintf("/post/%d", post.ID)
+		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
 	message := model.Message{
 		ID:       messageID,
@@ -446,7 +446,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
 	} else {
-		url = fmt.Sprintf("/post/%d", post.ID)
+		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
 	// 判断是几级评论，给出对应的提示
 	var content string
@@ -629,7 +629,7 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
 	} else {
-		url = fmt.Sprintf("/post/%d", post.ID)
+		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
 	message := model.Message{
 		ID:       messageID,
@@ -758,13 +758,13 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 
 	if req.By == "popular" || req.By == "weight" || req.By == "hot" {
 		// 按热度排序
-		posts, err = repo.NewPostRepo(global.DB).GetPagePostByWeight(req.Type, req.Page, req.Count)
+		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostByWeight(req.Type, req.Page, req.Count)
 	} else if req.By == "new" || req.By == "time" {
 		// 按最新排序
-		posts, err = repo.NewPostRepo(global.DB).GetPagePostByID(req.Type, req.Page, req.Count)
+		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostByID(req.Type, req.Page, req.Count)
 	} else if req.By == "featured" {
 		// 精选
-		posts, err = repo.NewPostRepo(global.DB).GetPagePostByFeatured(req.Type, req.Page, req.Count)
+		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostByFeatured(req.Type, req.Page, req.Count)
 	} else {
 		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
@@ -808,6 +808,11 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 		})
 	}
 	resp.Length = len(resp.Posts)
+	if resp.PageTotal%int64(req.Count) == 0 {
+		resp.PageTotal = resp.PageTotal / int64(req.Count)
+	} else {
+		resp.PageTotal = resp.PageTotal/int64(req.Count) + 1
+	}
 	return
 }
 

@@ -181,45 +181,44 @@ func (r *PostRepo) GetMoreDiaryByUser(user_id int64, before int64, count int) ([
 	return posts, err
 }
 
-func (r *PostRepo) GetPagePostByWeight(post_type string, page int, count int) ([]model.Post, error) {
-	var posts []model.Post
+func (r *PostRepo) GetPagePostByWeight(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
 	zlog.Infof("offset: %d, count: %d", offset, count)
-	var err error
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary'").Order("weight DESC,id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type != 'diary'").Count(&total)
 	} else {
 		err = r.DB.Model(&model.Post{}).Where("type = ?", post_type).Order("weight DESC,id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type = ?", post_type).Count(&total)
 	}
-
-	return posts, err
+	return
 }
 
-func (r *PostRepo) GetPagePostByID(post_type string, page int, count int) ([]model.Post, error) {
-	var posts []model.Post
+func (r *PostRepo) GetPagePostByID(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
 	zlog.Infof("offset: %d, count: %d", offset, count)
-	var err error
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary'").Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type != 'diary'").Count(&total)
 	} else {
 		err = r.DB.Model(&model.Post{}).Where("type = ?", post_type).Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type = ?", post_type).Count(&total)
 	}
 
-	return posts, err
+	return
 }
 
-func (r *PostRepo) GetPagePostByFeatured(post_type string, page int, count int) ([]model.Post, error) {
-	var posts []model.Post
+func (r *PostRepo) GetPagePostByFeatured(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
 	zlog.Infof("offset: %d, count: %d", offset, count)
-	var err error
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary' AND is_featured = 1").Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type != 'diary' AND is_featured = 1").Count(&total)
 	} else {
 		err = r.DB.Model(&model.Post{}).Where("type = ? AND is_featured = 1", post_type).Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type = ? AND is_featured = 1", post_type).Count(&total)
 	}
-	return posts, err
+	return
 }
 
 func (r *PostRepo) SetPostFeature(post_id int64) (err error) {

@@ -183,8 +183,9 @@ type GetPagePostsReq struct {
 }
 
 type GetPagePostsResp struct {
-	Posts  []PostInfo `json:"posts"`
-	Length int        `json:"length"`
+	Posts     []PostInfo `json:"posts"`
+	Length    int        `json:"length"`
+	PageTotal int64      `json:"page_total"`
 }
 
 type SetPostFeatureReq struct {
