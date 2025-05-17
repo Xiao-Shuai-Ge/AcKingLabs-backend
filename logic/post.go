@@ -510,7 +510,7 @@ func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommen
 		zlog.CtxErrorf(ctx, "查询评论失败: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	zlog.CtxDebugf(ctx, "查询评论成功: %v", comments)
+	//zlog.CtxDebugf(ctx, "查询评论成功: %v", comments)
 	for _, comment := range comments {
 		resp.Comments = append(resp.Comments, types.Comment{
 			ID:          comment.ID,
@@ -715,7 +715,7 @@ func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq)
 		zlog.CtxErrorf(ctx, "查询帖子失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
-	zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
+	//zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
 	for _, post := range posts {
 		// 截短内容
 		contentShort := post.Content
@@ -775,7 +775,7 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 		zlog.CtxErrorf(ctx, "查询帖子失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
-	zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
+	//zlog.CtxDebugf(ctx, "查询帖子成功: %v", posts)
 	for _, post := range posts {
 		// 截短内容
 		contentShort := post.Content

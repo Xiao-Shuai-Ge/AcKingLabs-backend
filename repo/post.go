@@ -183,7 +183,6 @@ func (r *PostRepo) GetMoreDiaryByUser(user_id int64, before int64, count int) ([
 
 func (r *PostRepo) GetPagePostByWeight(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
-	zlog.Infof("offset: %d, count: %d", offset, count)
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary'").Order("weight DESC,id DESC").Offset(offset).Limit(count).Find(&posts).Error
 		r.DB.Model(&model.Post{}).Where("type != 'diary'").Count(&total)
@@ -196,7 +195,6 @@ func (r *PostRepo) GetPagePostByWeight(post_type string, page int, count int) (p
 
 func (r *PostRepo) GetPagePostByID(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
-	zlog.Infof("offset: %d, count: %d", offset, count)
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary'").Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
 		r.DB.Model(&model.Post{}).Where("type != 'diary'").Count(&total)
@@ -210,7 +208,6 @@ func (r *PostRepo) GetPagePostByID(post_type string, page int, count int) (posts
 
 func (r *PostRepo) GetPagePostByFeatured(post_type string, page int, count int) (posts []model.Post, total int64, err error) {
 	offset := (page - 1) * count
-	zlog.Infof("offset: %d, count: %d", offset, count)
 	if post_type == "post" {
 		err = r.DB.Model(&model.Post{}).Where("type != 'diary' AND is_featured = 1").Order("id DESC").Offset(offset).Limit(count).Find(&posts).Error
 		r.DB.Model(&model.Post{}).Where("type != 'diary' AND is_featured = 1").Count(&total)

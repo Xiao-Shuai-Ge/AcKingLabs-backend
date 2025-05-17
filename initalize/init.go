@@ -39,6 +39,9 @@ func Init() {
 
 	// 对命令行参数进行处理
 	flags.Run()
+
+	//zlog.Debugf("爬取比赛内容: %v", contest.GetNowcoderContest())
+
 }
 
 func InitPath() {

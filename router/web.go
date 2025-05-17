@@ -106,4 +106,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		rg.GET("/diary-list", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetDiaryList)
 	})
+
+	// 注册比赛相关路由组
+	routeManager.RegisterContestRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestList)
+	})
 }
