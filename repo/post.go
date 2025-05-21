@@ -218,6 +218,18 @@ func (r *PostRepo) GetPagePostByFeatured(post_type string, page int, count int) 
 	return
 }
 
+func (r *PostRepo) GetPagePostBySource(post_type string, source string, page int, count int) (posts []model.Post, total int64, err error) {
+	offset := (page - 1) * count
+	if post_type == "post" {
+		err = r.DB.Model(&model.Post{}).Where("type != 'diary' AND source = ?", source).Order("weight DESC,id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type != 'diary' AND source = ?", source).Count(&total)
+	} else {
+		err = r.DB.Model(&model.Post{}).Where("type = ? AND source = ?", post_type, source).Order("weight DESC,id DESC").Offset(offset).Limit(count).Find(&posts).Error
+		r.DB.Model(&model.Post{}).Where("type = ? AND source = ?", post_type, source).Count(&total)
+	}
+	return
+}
+
 func (r *PostRepo) SetPostFeature(post_id int64) (err error) {
 	result := r.DB.Model(&model.Post{}).Where("id = ? AND is_featured = 0", post_id).Update("is_featured", true)
 	err = result.Error

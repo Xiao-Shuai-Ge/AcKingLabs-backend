@@ -43,7 +43,7 @@ func GetCodeForcesContest() (contests []model.Contest) {
 	}
 
 	for _, cfContest := range apiResponse.Result {
-		if cfContest.Phase != "BEFORE" {
+		if cfContest.Phase != "BEFORE" || cfContest.StartTimeSeconds*1000 > time.Now().Unix()*1000+7*24*3600*1000 {
 			continue
 		}
 
@@ -97,6 +97,7 @@ func GetAtCoderContest() (contests []model.Contest) {
 		// 转换为UTC时间戳（网页9提到时差问题）
 		startTime = startTime.Add(-time.Hour) // 日本时区转UTC+8
 		startTimestamp := startTime.Unix() * 1000
+		startTimestamp -= 8 * 3600 * 1000 // 日本时区转UTC+8
 
 		// 解析持续时间（示例格式：01:40）
 		durationStr := cols.Eq(2).Text()
@@ -108,7 +109,7 @@ func GetAtCoderContest() (contests []model.Contest) {
 		}
 		duration := int64(h*3600 + m*60)
 
-		//fmt.Println(cols.Eq(1).Find("a").Text(), time.Now().Unix()*1000, startTimestamp, (time.Now().Unix()*1000)+7*24*3600*1000)
+		fmt.Println(cols.Eq(1).Find("a").Text(), time.Now().Unix()*1000, startTimestamp, (time.Now().Unix()*1000)+7*24*3600*1000)
 		if startTimestamp < time.Now().Unix()*1000 || startTimestamp > (time.Now().Unix()*1000)+7*24*3600*1000 {
 			return // 已经结束的比赛不显示
 		}
@@ -182,7 +183,7 @@ func GetNowcoderContest() (contests []model.Contest) {
 			continue
 		}
 
-		fmt.Println(ncContest.ContestId)
+		//fmt.Println(ncContest.ContestId)
 		contests = append(contests, model.Contest{
 			Platform:  "Nowcoder",
 			Title:     ncContest.ContestName,

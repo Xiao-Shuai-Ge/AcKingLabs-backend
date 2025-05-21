@@ -110,5 +110,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	// 注册比赛相关路由组
 	routeManager.RegisterContestRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestList)
+
+		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.CreateContest)
+		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestDetail)
+
+		rg.POST("/booking", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.BookingContest)
+		rg.GET("/booking", middleware.Limiter(rate.Every(time.Second)*8, 20), middleware.Authentication(global.ROLE_USER), api.IsBookingContest)
 	})
 }

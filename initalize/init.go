@@ -40,6 +40,8 @@ func Init() {
 	// 对命令行参数进行处理
 	flags.Run()
 
+	BookingContestNotice()
+	//email.BookingContest([]string{"1019513201@qq.com", "1228341152@qq.com"}, "https://oj.dgut.edu.cn/", "2077年 东莞理工大学 软通杯", "20")
 	//zlog.Debugf("爬取比赛内容: %v", contest.GetNowcoderContest())
 
 }

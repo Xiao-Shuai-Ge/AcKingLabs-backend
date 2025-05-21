@@ -134,8 +134,8 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 	}
 	// 2. 内容不能超过 5000 个字符
 	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
-	if utf8.RuneCountInString(req.Content) > 5000 {
-		zlog.CtxErrorf(ctx, "内容不能超过 5000 个字: %v", err)
+	if utf8.RuneCountInString(req.Content) > 20000 {
+		zlog.CtxErrorf(ctx, "内容不能超过 20000 个字: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 除了周记打卡可以私密，其他类型都不可以私密
@@ -721,8 +721,8 @@ func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq)
 		contentShort := post.Content
 		// 去掉换行符
 		contentShort = strings.ReplaceAll(contentShort, "\n", " ")
-		if len(contentShort) > 200 {
-			contentShort = contentShort[:200]
+		if len(contentShort) > 300 {
+			contentShort = contentShort[:300]
 		}
 		if post.IsPrivate {
 			contentShort = "......"
@@ -765,6 +765,9 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 	} else if req.By == "featured" {
 		// 精选
 		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostByFeatured(req.Type, req.Page, req.Count)
+	} else if req.By == "source" {
+		// 按来源排序
+		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostBySource(req.Type, req.Source, req.Page, req.Count)
 	} else {
 		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
@@ -781,8 +784,8 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 		contentShort := post.Content
 		// 去掉换行符
 		contentShort = strings.ReplaceAll(contentShort, "\n", " ")
-		if len(contentShort) > 200 {
-			contentShort = contentShort[:200]
+		if len(contentShort) > 300 {
+			contentShort = contentShort[:300]
 		}
 		if post.IsPrivate {
 			contentShort = "......"
