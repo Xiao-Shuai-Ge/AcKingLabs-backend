@@ -67,6 +67,7 @@ type UlearningConfig struct {
 	GetSigninDetail        string `mapstructure:"getSigninDetail"`
 	GetCourseActivities    string `mapstructure:"getCourseActivities"`
 	GetAllCourses          string `mapstructure:"getAllCourses"`
+	GetActivityDetail      string `mapstructure:"getActivityDetail"`
 	SigninTeacherOperation string `mapstructure:"signinTeacherOperation"`
 	Login                  string `mapstructure:"login"`
 	Teacher                string `mapstructure:"teacher"`

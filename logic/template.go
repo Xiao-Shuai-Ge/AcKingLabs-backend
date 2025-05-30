@@ -1,23 +1,17 @@
 package logic
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"gorm.io/gorm"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/repo"
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils"
+	"tgwp/utils/ulearning"
 	"time"
 )
 
@@ -54,38 +48,49 @@ func (l *TemplateLogic) SigninList(ctx context.Context, req types.SigninListReq)
 		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
 	// 模拟登录
-	token, UserID, err := Login(userInfo.UserName, userInfo.Password)
-	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", token, userID)
+	user := ulearning.NewUser()
+	user.Login(userInfo.UserName, userInfo.Password)
+	zlog.CtxDebugf(ctx, "模拟用户登录成功: token=%s, userID=%d", user.Token, user.UserID)
+	teacher := ulearning.NewUser()
+	teacher.TeacherLogin()
+	zlog.CtxDebugf(ctx, "模拟老师登录成功: token=%s, userID=%d", teacher.Token, teacher.UserID)
 
 	// 获取课程列表
-	var getAllCoursesResp GetAllCoursesResp
-	getAllCoursesResp, err = GetAllCourses(token)
+	Courses, err := user.GetAllCourses()
 	if err != nil {
 		zlog.Errorf("获取课程列表失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	//zlog.CtxDebugf(ctx, "获取课程列表成功: %v", getAllCoursesResp)
-
-	for _, course := range getAllCoursesResp.CourseList {
-		// zlog.CtxDebugf(ctx, "课程名称: %s", course.Name)
+	for _, course := range Courses.CourseList {
 		// 获取课程活动
-		var getCourseActivitiesResp GetCourseActivitiesResp
-		getCourseActivitiesResp, err = GetCourseActivities(token, course.ID)
+		Activities, err := user.GetCourseActivities(course.ID)
 		if err != nil {
 			zlog.Errorf("获取课程活动失败: %v", err)
 			return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 		}
-		//zlog.CtxDebugf(ctx, "获取课程活动成功: %v", getCourseActivitiesResp)
-		for _, activity := range getCourseActivitiesResp.OtherActivityDTOList {
-			//zlog.CtxDebugf(ctx, "课程活动名称: %s", activity.Title)
+		for _, activity := range Activities.OtherActivityDTOList {
+			//if activity.RelationType == 1 {
+			//	zlog.CtxDebugf(ctx, "课程name:%s 状态:%d", course.Name, activity.PersonStatus)
+			//}
 			if activity.RelationType == 1 && activity.PersonStatus != 1 {
 				zlog.CtxDebugf(ctx, "课程活动名称: %s", activity.Title)
+				// 获取详细数据
+				detail, err := teacher.GetActivityDetail(activity.RelationID)
+				if err != nil {
+					zlog.CtxErrorf(ctx, "获取课程活动详细信息失败: %v", err)
+					return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+				}
+				zlog.CtxDebugf(ctx, "课程活动详细信息: %v", detail)
+				// 填装返回数据
 				Active := types.Active{
-					UserID:     UserID,
-					ClassName:  course.Name,
-					ActiveName: activity.Title,
-					ClassID:    course.ClassID,
-					RelationID: activity.RelationID,
+					UserID:        user.UserID,
+					ClassName:     course.Name,
+					ActiveName:    activity.Title,
+					ClassID:       course.ClassID,
+					RelationID:    activity.RelationID,
+					AbsenceNum:    detail.AbsenceNum,
+					NotAbsenceNum: detail.NotAbsenceNum,
+					IsFinished:    detail.Finish == "0",
 				}
 				resp.Actives = append(resp.Actives, Active)
 			}
@@ -110,54 +115,26 @@ func (l *TemplateLogic) Signin(ctx context.Context, req types.SigninReq) (resp t
 		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
 	// 模拟登录
-	token, UserID, err := Login(userInfo.UserName, userInfo.Password)
-	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", token, userID)
-
-	// 获取活动信息
-	var signinDetailResp SigninDetailResp
-	signinDetailResp, err = GetSigninDetail(token, req.RelationID)
+	user := ulearning.NewUser()
+	err = user.Login(userInfo.UserName, userInfo.Password)
 	if err != nil {
-		zlog.Errorf("获取活动信息失败: %v", err)
+		zlog.CtxErrorf(ctx, "模拟登录失败: %v", err)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", user.Token, user.UserID)
+	// 刷新教师 token
+	err = ulearning.NewUser().TeacherLogin()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "刷新教师 token 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	zlog.CtxDebugf(ctx, "获取活动信息成功: %v", signinDetailResp)
-	// 嘿嘿嘿
-	var signinOperationResp SigninOperationResp
-	signinOperationResp, err = SigninOperation(SigninOperationData{
-		token:          token,
-		attendanceType: signinDetailResp.Type,
-		relatedID:      req.RelationID,
-		classID:        req.ClassID,
-		userID:         UserID,
-		location:       signinDetailResp.Location,
-		attendanceCode: signinDetailResp.AttendanceCode,
-		force:          false,
-	})
+	// 签到
+	err = user.SigninByStudent(req.RelationID, req.ClassID)
 	if err != nil {
-		zlog.Errorf("签到失败: %v", err)
+		zlog.CtxErrorf(ctx, "签到失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	msg := fmt.Sprintf("[ %s ] 签到效果: %v", signinDetailResp.Title, signinOperationResp.Msg)
-	if signinOperationResp.NewStatus != 1 {
-		signinOperationResp, err = SigninOperation(SigninOperationData{
-			token:          token,
-			attendanceType: signinDetailResp.Type,
-			relatedID:      req.RelationID,
-			classID:        req.ClassID,
-			userID:         UserID,
-			location:       signinDetailResp.Location,
-			attendanceCode: signinDetailResp.AttendanceCode,
-			force:          true,
-		})
-		msg += fmt.Sprintf(" [ %s ] 再次签到效果: %v", signinDetailResp.Title, signinOperationResp.Msg)
-		if signinOperationResp.NewStatus != 1 {
-			zlog.CtxErrorf(ctx, "签到失败: %v", err)
-			return resp, response.ErrResp(err, response.INTERNAL_ERROR)
-		}
-	}
-	zlog.CtxInfof(ctx, "签到成功: %v", msg)
-
-	resp.Message = msg
+	resp.Message = "签到成功"
 	return
 }
 
@@ -180,320 +157,26 @@ func (l *TemplateLogic) SigninTeacher(ctx context.Context, req types.SigninTeach
 	}
 	zlog.CtxDebugf(ctx, "用户 %d 权限为 %d", userID, userInfo.Level)
 	// 模拟登录
-	token, UserID, err := Login(userInfo.UserName, userInfo.Password)
+	user := ulearning.NewUser()
+	err = user.Login(userInfo.UserName, userInfo.Password)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "模拟登录失败: %v", err)
-		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
-	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", token, userID)
-
+	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", user.Token, user.UserID)
 	// 登录老师账号
-	zlog.CtxDebugf(ctx, "开始模拟登录老师账号 %v %v", global.Config.Ulearning.Teacher, global.Config.Ulearning.Password)
-	teacherToken, TeacherID, err := Login(global.Config.Ulearning.Teacher, global.Config.Ulearning.Password)
+	teacher := ulearning.NewUser()
+	err = teacher.TeacherLogin()
 	if err != nil {
-		zlog.CtxErrorf(ctx, "登录老师账号失败: %v", err)
+		zlog.CtxErrorf(ctx, "模拟老师登录失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	zlog.CtxDebugf(ctx, "模拟登录成功: token=%s, userID=%d", teacherToken, TeacherID)
-
-	// 获取活动信息
-	var signinDetailResp SigninDetailResp
-	signinDetailResp, err = GetSigninDetail(token, req.RelationID)
+	// 签到
+	err = teacher.SigninByTeacher(req.RelationID, user.UserID)
 	if err != nil {
-		zlog.Errorf("获取活动信息失败: %v", err)
-		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
-	}
-	zlog.CtxDebugf(ctx, "获取活动信息成功: %v", signinDetailResp)
-	// 嘿嘿嘿
-	var signinTeacherOPResp SigninTeacherOPResp
-	signinTeacherOPResp, err = SigninTeacherOP(SigninTeacherOPData{
-		token:     teacherToken,
-		relatedID: req.RelationID,
-		UserID:    UserID,
-	})
-	if err != nil || signinTeacherOPResp.Status != "success" {
 		zlog.CtxErrorf(ctx, "签到失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	zlog.CtxInfof(ctx, "签到成功: %v", signinTeacherOPResp.Msg)
-
-	resp.Message = signinTeacherOPResp.Msg
-	return
-}
-
-type SigninTeacherOPData struct {
-	token     string
-	relatedID int
-	UserID    int
-}
-
-type User struct {
-	UserID int `json:"userID"`
-	Status int `json:"status"`
-}
-
-type SigninTeacherOPReq struct {
-	AttendanceID int    `json:"attendanceID"`
-	Users        []User `json:"users"`
-}
-
-type SigninTeacherOPResp struct {
-	Msg    string `json:"msg"`
-	Status string `json:"status"`
-}
-
-func SigninTeacherOP(data SigninTeacherOPData) (resp SigninTeacherOPResp, err error) {
-	zlog.CtxDebugf(context.Background(), "开始签到: %v", data)
-	user := User{
-		UserID: data.UserID,
-		Status: 1,
-	}
-	users := []User{user}
-	var reqData = SigninTeacherOPReq{
-		AttendanceID: data.relatedID,
-		Users:        users,
-	}
-	jsonData, _ := json.Marshal(reqData)
-
-	zlog.CtxDebugf(context.Background(), "请求签到数据: %s", string(jsonData))
-
-	req, _ := http.NewRequest("POST", fmt.Sprintf(global.Config.Ulearning.SigninTeacherOperation), bytes.NewBuffer(jsonData))
-	req.Header.Add("Authorization", data.token)
-	req.Header.Add("Content-Type", "application/json")
-
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		zlog.Errorf("请求签到失败: %v", err)
-		return
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
-	zlog.CtxDebugf(context.Background(), "签到结果: %s", string(body))
-	json.Unmarshal([]byte(body), &resp)
-
-	return
-}
-
-type SigninOperationData struct {
-	attendanceType int
-	token          string
-	relatedID      int
-	relatedType    int
-	classID        int
-	userID         int
-	location       string
-	attendanceCode string
-	force          bool
-}
-
-type SigninOperationReq struct {
-	AttendanceID   int    `json:"attendanceID"`
-	ClassID        int    `json:"classID"`
-	UserID         int    `json:"userID"`
-	Location       string `json:"location"`
-	Address        string `json:"address"`
-	EnterWay       int    `json:"enterWay"`
-	AttendanceCode string `json:"attendanceCode"`
-}
-
-type SigninOperationResp struct {
-	Msg       string `json:"msg"`
-	NewStatus int    `json:"newStatus"`
-	Status    int    `json:"status"`
-}
-
-func SigninOperation(data SigninOperationData) (resp SigninOperationResp, err error) {
-	zlog.CtxDebugf(context.Background(), "开始签到: %v", data)
-	var reqData = SigninOperationReq{
-		AttendanceID:   data.relatedID,
-		ClassID:        data.classID,
-		UserID:         data.userID,
-		Location:       data.location,
-		Address:        "",
-		EnterWay:       1,
-		AttendanceCode: data.attendanceCode,
-	}
-	zlog.CtxDebugf(context.Background(), "开始签到: %v", reqData)
-	if data.attendanceType == 0 {
-		reqData.AttendanceCode = ""
-	} else if data.attendanceType == 1 || data.attendanceType == 2 {
-		reqData.Location = ""
-	}
-	if data.force {
-		reqData.Location = "113,22"
-		reqData.AttendanceCode = ""
-	}
-
-	jsonData, _ := json.Marshal(reqData)
-
-	zlog.CtxDebugf(context.Background(), "请求签到数据: %s", string(jsonData))
-
-	req, _ := http.NewRequest("POST", fmt.Sprintf(global.Config.Ulearning.SigninOperation), bytes.NewBuffer(jsonData))
-	req.Header.Add("Authorization", data.token)
-	req.Header.Add("Content-Type", "application/json")
-
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		zlog.Errorf("请求签到失败: %v", err)
-		return
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
-	zlog.CtxDebugf(context.Background(), "签到结果: %s", string(body))
-	json.Unmarshal([]byte(body), &resp)
-
-	return
-}
-
-type SigninDetailResp struct {
-	Location       string `json:"location"`
-	AttendanceCode string `json:"attendanceCode"`
-	Type           int    `json:"type"`
-	Title          string `json:"title"`
-}
-
-func GetSigninDetail(token string, relatedID int) (resp SigninDetailResp, err error) {
-	req, _ := http.NewRequest("GET", fmt.Sprintf(global.Config.Ulearning.GetSigninDetail, relatedID), nil)
-	req.Header.Add("Authorization", token)
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		zlog.Errorf("请求签到详情失败: %v", err)
-		return
-	}
-
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
-	zlog.CtxDebugf(context.Background(), "签到详情: %s", string(body))
-	json.Unmarshal([]byte(body), &resp)
-
-	return
-}
-
-type GetCourseActivitiesResp struct {
-	OtherActivityDTOList []struct {
-		RelationID   int    `json:"relationId"`
-		RelationType int    `json:"relationType"`
-		Title        string `json:"title"`
-		PersonStatus int    `json:"personStatus"`
-	} `json:"otherActivityDTOList"`
-}
-
-func GetCourseActivities(token string, courseID int) (resp GetCourseActivitiesResp, err error) {
-	req, _ := http.NewRequest("GET", fmt.Sprintf(global.Config.Ulearning.GetCourseActivities, courseID), nil)
-	req.Header.Add("Authorization", token)
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		zlog.Errorf("请求课程活动失败: %v", err)
-		return
-	}
-
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
-	json.Unmarshal([]byte(body), &resp)
-
-	return
-}
-
-type GetAllCoursesResp struct {
-	CourseList []struct {
-		ID      int    `json:"id"`
-		Name    string `json:"name"`
-		ClassID int    `json:"classId"`
-	} `json:"courseList"`
-}
-
-// GetAllCourses 获取课程列表
-func GetAllCourses(token string) (resp GetAllCoursesResp, err error) {
-	req, _ := http.NewRequest("GET", global.Config.Ulearning.GetAllCourses, nil)
-	req.Header.Add("Authorization", token)
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		zlog.Errorf("请求课程列表失败: %v", err)
-		return
-	}
-
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
-	json.Unmarshal([]byte(body), &resp)
-
-	//zlog.Debugf("课程列表: %v", resp)
-	return
-}
-
-type LoginResponse struct {
-	Authorization string `json:"AUTHORIZATION"`
-	UserID        int    `json:"userId"`
-	RoleID        int    `json:"roleId"`
-}
-
-// Login 模拟登录
-func Login(username, password string) (token string, userID int, err error) {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	data := url.Values{
-		"loginName": {username},
-		"password":  {password},
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", global.Config.Ulearning.Login, strings.NewReader(data.Encode()))
-	if err != nil {
-		zlog.Errorf("请求登录失败: %v", err)
-		return
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		zlog.Errorf("请求登录失败: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusFound {
-		body, _ := ioutil.ReadAll(resp.Body)
-		zlog.Errorf("请求登录失败: %s", string(body))
-		return
-	}
-
-	authToken := ""
-	userInfo := ""
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "AUTHORIZATION" {
-			authToken = cookie.Value
-		} else if cookie.Name == "USERINFO" {
-			userInfo, err = url.QueryUnescape(cookie.Value)
-			if err != nil {
-				zlog.Errorf("解析用户信息失败: %v", err)
-				return
-			}
-		}
-	}
-
-	if authToken == "" {
-		zlog.Errorf("登录失败: 未获取到 AUTHORIZATION 值")
-		return
-	}
-
-	var userDetails LoginResponse
-	if err = json.Unmarshal([]byte(userInfo), &userDetails); err != nil {
-		zlog.Errorf("解析用户信息失败: %v", err)
-		return
-	}
-
-	//fmt.Printf("UserID: %s, RoleID: %d\n", userDetails.UserID, userDetails.RoleID)
-
-	token = authToken
-	userID = userDetails.UserID
-
-	zlog.Debugf("登录成功 %v", userInfo)
+	resp.Message = "签到成功"
 	return
 }

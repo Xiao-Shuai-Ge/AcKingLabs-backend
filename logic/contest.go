@@ -27,7 +27,11 @@ func (l *ContestLogic) GetContestList(ctx context.Context, req types.GetContestL
 	// 分各种情况查询比赛
 	var contests []model.Contest
 
-	contests, resp.PageTotal, err = repo.NewContestRepo(global.DB).GetContestList(req.Type, req.Page, req.Count)
+	if req.Type == "recommend" {
+		contests, resp.PageTotal, err = repo.NewContestRepo(global.DB).GetContestListByRecommend(req.Page, req.Count)
+	} else {
+		contests, resp.PageTotal, err = repo.NewContestRepo(global.DB).GetContestList(req.Type, req.Page, req.Count)
+	}
 
 	// 数据库查询失败
 	if err != nil {
@@ -210,5 +214,24 @@ func (l *ContestLogic) IsBookingContest(ctx context.Context, req types.IsBooking
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	resp.IsBooking = isBooking
+	return
+}
+
+func (l *ContestLogic) RecommendContest(ctx context.Context, req types.RecommendContestReq) (resp types.RecommendContestResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// ID 转化为 int64
+	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ContestID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 数据库操作
+	err = repo.NewContestRepo(global.DB).SetContestRecommend(contestID, req.IsRecommend)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "设置推荐状态失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 组装返回数据
+	resp.IsRecommend = req.IsRecommend
 	return
 }

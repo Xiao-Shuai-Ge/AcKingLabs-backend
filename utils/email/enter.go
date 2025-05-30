@@ -58,3 +58,12 @@ func BookingContest(to []string, url string, title string, time string) error {
 	`
 	return Send(to, "[AcKing学习分享平台] [比赛预约]", fmt.Sprintf(message, url, title, time))
 }
+
+func AutoSignin(to string, name string) error {
+	message := `
+<div>
+    <span>检测到你的签到： %s ，已为你自动签到成功。请注意。</span>
+</div>
+	`
+	return Send([]string{to}, "[AcKing学习分享平台] [自动签到]", fmt.Sprintf(message, name))
+}

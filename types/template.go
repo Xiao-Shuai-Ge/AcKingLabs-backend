@@ -11,11 +11,14 @@ type SigninListReq struct {
 }
 
 type Active struct {
-	UserID     int    `json:"user_id"`
-	ClassName  string `json:"class_name"`
-	ActiveName string `json:"active_name"`
-	ClassID    int    `json:"class_id"`
-	RelationID int    `json:"relation_id"`
+	UserID        int    `json:"user_id"`
+	ClassName     string `json:"class_name"`
+	ActiveName    string `json:"active_name"`
+	ClassID       int    `json:"class_id"`
+	RelationID    int    `json:"relation_id"`
+	AbsenceNum    int    `json:"absence_num"`
+	NotAbsenceNum int    `json:"not_absence_num"`
+	IsFinished    bool   `json:"is_finished"`
 }
 
 type SigninListResp struct {

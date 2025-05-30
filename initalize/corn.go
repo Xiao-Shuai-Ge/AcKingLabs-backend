@@ -2,6 +2,7 @@ package initalize
 
 import (
 	"context"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"tgwp/global"
@@ -10,6 +11,7 @@ import (
 	"tgwp/repo"
 	"tgwp/utils/contest"
 	"tgwp/utils/email"
+	"tgwp/utils/ulearning"
 	"time"
 )
 
@@ -34,6 +36,13 @@ func Cron() {
 	if err != nil {
 		zlog.Errorf("添加定时任务失败:%v", err)
 	}
+
+	// 每1分钟检查自动签到
+	_, err = crontab.AddFunc("@every 1m", AutoSignin)
+	if err != nil {
+		zlog.Errorf("添加定时任务失败:%v", err)
+	}
+
 	zlog.Infof("启动定时任务成功")
 	crontab.Start()
 }
@@ -129,4 +138,79 @@ func BookingContestNotice() {
 		}
 	}
 	zlog.Infof("检查订阅比赛通知完成")
+}
+
+func AutoSignin() {
+	zlog.Infof("开始检查自动签到列表")
+	// 获取所有参与自动签到的数据行
+	autoSignins, err := repo.NewTemplateRepo(global.DB).GetAutoSigninList()
+	if err != nil {
+		zlog.Errorf("获取自动签到列表失败: %v", err)
+		return
+	}
+	var now_userid int64 // 记录当前的用户ID
+	user := ulearning.NewUser()
+	for _, autoSignin := range autoSignins {
+		// 判断是否需要登录
+		if autoSignin.UserID != now_userid {
+			now_userid = autoSignin.UserID
+			// 从数据库里获取账号密码
+			var userInfo *model.Ulearning
+			userInfo, err = repo.NewTemplateRepo(global.DB).GetUserInfo(autoSignin.UserID)
+			if err != nil {
+				zlog.Errorf("获取用户信息失败: %v", err)
+				continue
+			}
+			err = user.Login(userInfo.UserName, userInfo.Password)
+			if err != nil {
+				zlog.Errorf("登录失败: %v", err)
+				continue
+			}
+		}
+		// 查看签到活动
+		var Activities ulearning.GetCourseActivitiesResp
+		Activities, err = user.GetCourseActivities(int(autoSignin.CoursesID))
+		if err != nil {
+			zlog.Errorf("获取课程活动失败: %v", err)
+			continue
+		}
+		for _, activity := range Activities.OtherActivityDTOList {
+			if activity.RelationType == 1 && activity.PersonStatus == 0 && activity.Status != 3 {
+				zlog.Infof("发现需要处理的签到: 【%s】 %s", autoSignin.CourseName, activity.Title)
+				// 获取签到详情
+				teacher := ulearning.NewUser()
+				err = teacher.TeacherLogin()
+				if err != nil {
+					zlog.Errorf("登录失败: %v", err)
+					continue
+				}
+				var detail ulearning.GetActivityDetailResp
+				detail, err = teacher.GetActivityDetail(activity.RelationID)
+				if err != nil {
+					zlog.Errorf("获取课程活动详细信息失败: %v", err)
+					continue
+				}
+				// 检查签到人数占比
+				p := float64(detail.AbsenceNum) / float64(detail.AbsenceNum+detail.NotAbsenceNum)
+				zlog.Infof("签到人数占比: %.1f%% (%d/%d)", p*100, detail.AbsenceNum, detail.AbsenceNum+detail.NotAbsenceNum)
+				if p < 0.4 {
+					zlog.Warnf("签到人数占比不足 40%% : (%d/%d)", detail.AbsenceNum, detail.AbsenceNum+detail.NotAbsenceNum)
+					continue
+				}
+				// 签到
+				err = user.SigninByStudent(activity.RelationID, int(autoSignin.ClassID))
+				if err != nil {
+					zlog.Errorf("签到失败: %v", err)
+					continue
+				}
+				zlog.Infof("签到成功: 【%s】 %s", autoSignin.CourseName, activity.Title)
+				// 发送邮箱通知
+				err = email.AutoSignin(autoSignin.Email, fmt.Sprintf("【%s】 %s", autoSignin.CourseName, activity.Title))
+				if err != nil {
+					zlog.Errorf("发送邮件通知失败: %v", err)
+					continue
+				}
+			}
+		}
+	}
 }

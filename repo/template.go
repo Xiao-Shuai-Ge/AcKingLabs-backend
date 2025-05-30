@@ -33,3 +33,8 @@ func (r *TemplateRepo) GetUserInfo(user_id int64) (user *model.Ulearning, err er
 	err = r.DB.Model(&model.Ulearning{}).Where("user_id =?", user_id).First(&user).Error
 	return user, err
 }
+
+func (r *TemplateRepo) GetAutoSigninList() (autoSigninList []*model.AutoSignin, err error) {
+	err = r.DB.Model(&model.AutoSignin{}).Order("user_id desc").Find(&autoSigninList).Error
+	return autoSigninList, err
+}

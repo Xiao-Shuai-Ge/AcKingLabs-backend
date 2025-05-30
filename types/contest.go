@@ -59,3 +59,12 @@ type IsBookingContestReq struct {
 type IsBookingContestResp struct {
 	IsBooking bool `json:"is_booking"`
 }
+
+type RecommendContestReq struct {
+	ContestID   string `json:"contest_id"`
+	IsRecommend bool   `json:"is_recommend"`
+}
+
+type RecommendContestResp struct {
+	IsRecommend bool `json:"is_recommend"`
+}

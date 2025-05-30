@@ -70,6 +70,13 @@ func (r *ContestRepo) GetContestList(contest_type string, page int, count int) (
 	return
 }
 
+func (r *ContestRepo) GetContestListByRecommend(page int, count int) (contests []model.Contest, total int64, err error) {
+	offset := (page - 1) * count
+	err = r.DB.Model(&model.Contest{}).Where("is_recommend = ?", true).Order("start_time DESC").Offset(offset).Limit(count).Find(&contests).Error
+	r.DB.Model(&model.Contest{}).Where("is_recommend = ?", true).Count(&total)
+	return
+}
+
 func (r *ContestRepo) IsBooking(contestID int64, userID int64) (is_exists bool, err error) {
 	var count int64
 	err = r.DB.Model(&model.Booking{}).Where("contest_id =? AND user_id = ?", contestID, userID).Count(&count).Error
@@ -103,4 +110,8 @@ func (r *ContestRepo) GetBookingListByContestID(contestID int64) (bookings []mod
 
 func (r *ContestRepo) RemoveBookingByContestID(contestID int64) error {
 	return r.DB.Where("contest_id = ?", contestID).Delete(&model.Booking{}).Error
+}
+
+func (r *ContestRepo) SetContestRecommend(contestID int64, isRecommend bool) error {
+	return r.DB.Model(&model.Contest{}).Where("id = ?", contestID).Update("is_recommend", isRecommend).Error
 }

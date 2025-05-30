@@ -69,3 +69,14 @@ func IsBookingContest(c *gin.Context) {
 	resp, err := logic.NewContestLogic().IsBookingContest(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func RecommendContest(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.RecommendContestReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "推荐比赛请求: %v", req)
+	resp, err := logic.NewContestLogic().RecommendContest(ctx, req)
+	response.Response(c, resp, err)
+}

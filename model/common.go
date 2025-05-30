@@ -45,3 +45,12 @@ type Ulearning struct {
 	Password string `json:"password" gorm:"column:password;type:varchar(255);comment:密码;"`
 	Level    int    `json:"level" gorm:"column:level;type:int;comment:等级;"`
 }
+
+type AutoSignin struct {
+	TimeModel
+	UserID     int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;primaryKey;uniqueIndex:idx_post_user_unique"`
+	CoursesID  int64  `json:"courses_id" gorm:"column:courses_id;type:bigint;comment:课程ID;primaryKey"`
+	CourseName string `json:"course_name" gorm:"column:course_name;type:varchar(255);comment:课程名称;"`
+	ClassID    int64  `json:"class_id" gorm:"column:class_id;type:bigint;comment:班级ID;"`
+	Email      string `json:"email" gorm:"column:email;type:varchar(255);comment:邮箱;"`
+}

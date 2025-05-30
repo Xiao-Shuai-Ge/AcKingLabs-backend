@@ -116,5 +116,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		rg.POST("/booking", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.BookingContest)
 		rg.GET("/booking", middleware.Limiter(rate.Every(time.Second)*8, 20), middleware.Authentication(global.ROLE_USER), api.IsBookingContest)
+
+		rg.POST("/recommend", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.RecommendContest)
 	})
 }
