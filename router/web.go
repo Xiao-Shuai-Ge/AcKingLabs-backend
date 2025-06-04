@@ -47,6 +47,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/signin-list", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninList)
 		rg.POST("/signin", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.Signin)
 		rg.POST("/signin-teacher", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninTeacher)
+
+		rg.GET("/auto-list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.GetAutoList)
+		rg.POST("/auto-setting", middleware.Limiter(rate.Every(time.Minute)*3, 5), middleware.Authentication(global.ROLE_USER), api.AutoSetting)
 	})
 
 	// 注册文件上传相关路由组

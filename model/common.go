@@ -48,9 +48,10 @@ type Ulearning struct {
 
 type AutoSignin struct {
 	TimeModel
-	UserID     int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;primaryKey;uniqueIndex:idx_post_user_unique"`
+	UserID     int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;primaryKey;"`
 	CoursesID  int64  `json:"courses_id" gorm:"column:courses_id;type:bigint;comment:课程ID;primaryKey"`
 	CourseName string `json:"course_name" gorm:"column:course_name;type:varchar(255);comment:课程名称;"`
 	ClassID    int64  `json:"class_id" gorm:"column:class_id;type:bigint;comment:班级ID;"`
 	Email      string `json:"email" gorm:"column:email;type:varchar(255);comment:邮箱;"`
+	Percentage int    `json:"percentage" gorm:"column:percentage;type:int;comment:签到百分比;"`
 }

@@ -38,3 +38,37 @@ func (r *TemplateRepo) GetAutoSigninList() (autoSigninList []*model.AutoSignin, 
 	err = r.DB.Model(&model.AutoSignin{}).Order("user_id desc").Find(&autoSigninList).Error
 	return autoSigninList, err
 }
+
+func (r *TemplateRepo) GetAutoSigninListByUserID(user_id int64) (autoSigninList []*model.AutoSignin, err error) {
+	err = r.DB.Model(&model.AutoSignin{}).Where("user_id =?", user_id).Find(&autoSigninList).Error
+	return autoSigninList, err
+}
+
+func (r *TemplateRepo) IsExistAuto(user_id int64, courses_id int64) (exist bool, err error) {
+	var count int64
+	err = r.DB.Model(&model.AutoSignin{}).Where("user_id =? and courses_id =?", user_id, courses_id).Count(&count).Error
+	if err != nil {
+		return
+	}
+	if count > 0 {
+		exist = true
+	} else {
+		exist = false
+	}
+	return
+}
+
+func (r *TemplateRepo) CreateAutoSignin(autoSignin *model.AutoSignin) (err error) {
+	err = r.DB.Model(&model.AutoSignin{}).Create(autoSignin).Error
+	return err
+}
+
+func (r *TemplateRepo) UpdateAutoSignin(autoSignin *model.AutoSignin) (err error) {
+	err = r.DB.Model(&model.AutoSignin{}).Where("user_id =? and courses_id =?", autoSignin.UserID, autoSignin.CoursesID).Select("*").Updates(autoSignin).Error
+	return err
+}
+
+func (r *TemplateRepo) DeleteAutoSignin(autoSignin *model.AutoSignin) (err error) {
+	err = r.DB.Model(&model.AutoSignin{}).Where("user_id =? and courses_id =?", autoSignin.UserID, autoSignin.CoursesID).Delete(autoSignin).Error
+	return err
+}

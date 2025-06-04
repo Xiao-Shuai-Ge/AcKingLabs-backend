@@ -193,8 +193,8 @@ func AutoSignin() {
 				// 检查签到人数占比
 				p := float64(detail.AbsenceNum) / float64(detail.AbsenceNum+detail.NotAbsenceNum)
 				zlog.Infof("签到人数占比: %.1f%% (%d/%d)", p*100, detail.AbsenceNum, detail.AbsenceNum+detail.NotAbsenceNum)
-				if p < 0.4 {
-					zlog.Warnf("签到人数占比不足 40%% : (%d/%d)", detail.AbsenceNum, detail.AbsenceNum+detail.NotAbsenceNum)
+				if int(p*100) < autoSignin.Percentage {
+					zlog.Warnf("签到人数占比不足 %d%% : (%d/%d)", autoSignin.Percentage, detail.AbsenceNum, detail.AbsenceNum+detail.NotAbsenceNum)
 					continue
 				}
 				// 签到

@@ -66,3 +66,27 @@ func SigninTeacher(c *gin.Context) {
 	resp, err := logic.NewTemplateLogic().SigninTeacher(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func GetAutoList(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetAutoListReq](c)
+	req.UserID = jwtUtils.GetUserId(c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "auto list request: %v", req)
+	resp, err := logic.NewTemplateLogic().GetAutoList(ctx, req)
+	response.Response(c, resp, err)
+}
+
+func AutoSetting(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.AutoSettingReq](c)
+	req.UserID = jwtUtils.GetUserId(c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "auto setting request: %v", req)
+	resp, err := logic.NewTemplateLogic().AutoSetting(ctx, req)
+	response.Response(c, resp, err)
+}
