@@ -258,3 +258,8 @@ func (r *PostRepo) GetDiaryList(user_id int64) (posts []model.Post, err error) {
 	err = r.DB.Model(&model.Post{}).Where("type = 'diary' AND user_id = ?", user_id).Order("id DESC").Find(&posts).Error
 	return posts, err
 }
+
+func (r *PostRepo) GetPostAfterUpdateTime(update_time int64) (posts []model.Post, err error) {
+	err = r.DB.Model(&model.Post{}).Where("updated_time > ?", update_time).Find(&posts).Error
+	return posts, err
+}

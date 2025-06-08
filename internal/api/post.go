@@ -202,3 +202,14 @@ func GetDiaryList(c *gin.Context) {
 	resp, err := logic.NewPostLogic().GetDiaryList(ctx, req)
 	response.Response(c, resp, err)
 }
+
+func SearchPosts(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.SearchPostsReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "搜索帖子请求: %v", req)
+	resp, err := logic.NewPostLogic().SearchPosts(ctx, req)
+	response.Response(c, resp, err)
+}

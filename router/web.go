@@ -108,6 +108,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/feature", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
 
 		rg.GET("/diary-list", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetDiaryList)
+
+		rg.GET("/search", middleware.Limiter(rate.Every(time.Minute)*6, 10), api.SearchPosts)
 	})
 
 	// 注册比赛相关路由组

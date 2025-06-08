@@ -208,3 +208,15 @@ type GetDiaryListResp struct {
 	Posts  []DiaryInfo `json:"posts"`
 	Length int         `json:"length"`
 }
+
+type SearchPostsReq struct {
+	Keyword string `form:"keyword"`
+	Page    int    `form:"page"`
+	Count   int    `form:"count"`
+}
+
+type SearchPostsResp struct {
+	Posts     []PostInfo `json:"posts"`
+	Length    int        `json:"length"`
+	PageTotal int64      `json:"page_total"`
+}

@@ -14,6 +14,7 @@ import (
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils"
+	"tgwp/utils/elasticSearchUtils"
 	"time"
 	"unicode/utf8"
 )
@@ -905,4 +906,86 @@ func (l *PostLogic) GetDiaryList(ctx context.Context, req types.GetDiaryListReq)
 	}
 	resp.Length = len(resp.Posts)
 	return resp, nil
+}
+
+func (l *PostLogic) SearchPosts(ctx context.Context, req types.SearchPostsReq) (resp types.SearchPostsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// 查询 ElasticSearch
+	// 查询测试
+	query := `{
+	 "query": {
+		"query_string": {
+		  "query": "%s",
+		  "fields": ["*"],
+		  "analyze_wildcard": true
+		}
+	 },
+     "from": %d,
+	 "size": %d
+	}`
+	query = fmt.Sprintf(query, req.Keyword, (req.Page-1)*req.Count, req.Count)
+	m, err := elasticSearchUtils.Search(global.ESClient, "post", query)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 解析结果
+	resp.Length = len(m["hits"].(map[string]interface{})["hits"].([]interface{}))
+	zlog.Debugf("查询数量为: %d", resp.Length)
+	resp.PageTotal = int64(m["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
+	zlog.Debugf("总数量为: %v", resp.PageTotal)
+	if resp.PageTotal%int64(req.Count) == 0 {
+		resp.PageTotal = resp.PageTotal / int64(req.Count)
+	} else {
+		resp.PageTotal = resp.PageTotal/int64(req.Count) + 1
+	}
+	// 拿取ID，然后从数据库中查询详细信息
+	for _, hit := range m["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		postIDStr := hit.(map[string]interface{})["_id"].(string)
+		zlog.Debugf("postID: %s", postIDStr)
+		// 转换为 int64
+		postID, err := strconv.ParseInt(postIDStr, 10, 64)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", postID, err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		// 查询数据库
+		post, err := repo.NewPostRepo(global.DB).GetPostDetail(postID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+		// 组装返回数据
+		contentShort := post.Content
+		// 去掉换行符
+		contentShort = strings.ReplaceAll(contentShort, "\n", " ")
+		if len(contentShort) > 300 {
+			contentShort = contentShort[:300]
+		}
+		if post.IsPrivate {
+			contentShort = "......"
+		}
+		resp.Posts = append(resp.Posts, types.PostInfo{
+			ID:           post.ID,
+			UserID:       post.UserID,
+			Title:        post.Title,
+			ContentShort: contentShort,
+			Type:         post.Type,
+			Source:       post.Source,
+			Likes:        post.Likes,
+			Comments:     post.Comments,
+			CreatedAt:    post.CreatedTime,
+			UpdatedAt:    post.UpdatedTime,
+
+			IsAdminLike: post.IsAdminLike,
+			IsPrivate:   post.IsPrivate,
+			IsFeatured:  post.IsFeatured,
+
+			Weight: post.Weight,
+		})
+	}
+
+	//zlog.Debugf("查询结果: %v", m)
+
+	return
 }

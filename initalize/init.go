@@ -37,6 +37,9 @@ func Init() {
 	// 初始化OSS服务
 	InitOSS()
 
+	// 初始化ElasticSearch
+	InitElasticsearch()
+
 	// 对命令行参数进行处理
 	flags.Run()
 

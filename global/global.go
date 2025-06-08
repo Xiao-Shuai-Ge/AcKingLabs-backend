@@ -2,6 +2,7 @@ package global
 
 import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 	"tgwp/configs"
@@ -9,10 +10,11 @@ import (
 )
 
 var (
-	Path   string
-	DB     *gorm.DB
-	Rdb    *redis.Client
-	Config *configs.Config
+	Path     string
+	DB       *gorm.DB
+	Rdb      *redis.Client
+	Config   *configs.Config
+	ESClient *elasticsearch.Client
 
 	SnowflakeNode *snowflake.Node // 默认雪花ID生成节点
 )
