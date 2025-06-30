@@ -769,6 +769,15 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 	} else if req.By == "source" {
 		// 按来源排序
 		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostBySource(req.Type, req.Source, req.Page, req.Count)
+	} else if req.By == "user" {
+		// 查看个人
+		var userID int64
+		userID, err = strconv.ParseInt(req.UserID, 10, 64)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		posts, resp.PageTotal, err = repo.NewPostRepo(global.DB).GetPagePostByUser(req.Type, userID, req.Page, req.Count)
 	} else {
 		zlog.CtxErrorf(ctx, "类型错误: %v", req.Type)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)

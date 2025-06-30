@@ -16,6 +16,7 @@ type RegisterReq struct {
 
 type RegisterResp struct {
 	Atoken string `json:"atoken"`
+	Rtoken string `json:"rtoken"`
 }
 
 type LoginReq struct {

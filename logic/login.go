@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"math/rand"
+	"strconv"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/model"
@@ -120,7 +121,18 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 	}
 	// 生成 atoken
 	atoken, err := jwtUtils.GenAtoken(fmt.Sprintf("%d", id), req.Username, 0, global.ATOKEN_EFFECTIVE_TIME)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
 	resp.Atoken = atoken
+	// 生成 rtoken , 但是以正常 atoken 有效时间为准
+	rtoken, err := jwtUtils.GenRtoken(fmt.Sprintf("%d", id), req.Username, 0, global.ATOKEN_EFFECTIVE_TIME)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "生成 rtoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	resp.Rtoken = rtoken
 	return resp, nil
 }
 
@@ -159,10 +171,12 @@ func (l *LoginLogic) Login(ctx context.Context, req types.LoginReq) (resp types.
 	// 生成 rtoken
 	if req.IsRemember {
 		rtoken, err = jwtUtils.GenRtoken(fmt.Sprintf("%d", user.ID), user.Username, user.Role, global.RTOKEN_EFFECTIVE_TIME)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "生成 rtoken 失败: %v", err)
-			return resp, response.ErrResp(err, response.INTERNAL_ERROR)
-		}
+	} else {
+		rtoken, err = jwtUtils.GenRtoken(fmt.Sprintf("%d", user.ID), user.Username, user.Role, global.ATOKEN_EFFECTIVE_TIME)
+	}
+	if err != nil {
+		zlog.CtxErrorf(ctx, "生成 rtoken 失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 	resp.Atoken = atoken
 	resp.Rtoken = rtoken
@@ -176,9 +190,25 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 		zlog.CtxInfof(ctx, "验证 rtoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.RTOKEN_IS_EXPIRED)
 	}
+	// 转换 userid 到 int64
+	userID, err := strconv.ParseInt(data.Userid, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", data.Userid, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 获取用户现在信息
+	var user model.User
+	user, err = repo.NewUserRepo(global.DB).GetUserProfileByID(userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户不存在: %v", err)
+		return resp, response.ErrResp(err, response.USER_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "查询用户失败(): %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
 	// 生成新的 atoken
 	var atoken string
-	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), data.Username, data.Role, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), user.Username, user.Role, global.ATOKEN_EFFECTIVE_TIME)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)

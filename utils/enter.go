@@ -101,7 +101,7 @@ func IdentifyPhone(phone string) bool {
 func RecordTime(start time.Time) func() {
 	return func() {
 		end := time.Now()
-		zlog.Debugf("use time:%d", end.Unix()-start.Unix())
+		zlog.Debugf("use time:%d ms", end.UnixMilli()-start.UnixMilli())
 	}
 }
 

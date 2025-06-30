@@ -186,14 +186,14 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "用户名长度不能超过 30")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 2.真实姓名去除所有空格，不能为空，且长度在 [2,20] 之间
+	// 2.真实姓名去除所有空格，不能为空，且长度在 [4,20] 之间
 	req.RealName = strings.ReplaceAll(req.RealName, " ", "")
-	if len(req.RealName) < 2 || len(req.RealName) > 20 {
+	if len(req.RealName) < 4 || len(req.RealName) > 20 {
 		zlog.CtxErrorf(ctx, "真实姓名长度必须在 [2,20] 之间")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	if len(req.Avatar) > 255 {
-		zlog.CtxErrorf(ctx, "头像 URL 长度不能超过 255")
+	if len(req.Avatar) > 512 {
+		zlog.CtxErrorf(ctx, "头像 URL 长度不能超过 512")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 年级在 [0,99]
@@ -201,7 +201,7 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "年级必须在 [0,99] 之间")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 4.其他一律不超过30即可
+	// 5.其他一律不超过30即可
 	if utils.Max(len(req.CodeforcesID), len(req.StudentNo)) > 30 {
 		zlog.CtxErrorf(ctx, "其他字段长度不能超过 30")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)

@@ -6,7 +6,7 @@ type User struct {
 	Username string `json:"username" gorm:"column:username;type:varchar(255);comment:用户名"`
 	Password string `json:"password" gorm:"column:password;type:varchar(255);comment:密码"`
 	Email    string `json:"email" gorm:"column:email;type:varchar(255);comment:邮箱"`
-	Avatar   string `json:"avatar" gorm:"column:avatar;type:varchar(255);comment:头像URL"`
+	Avatar   string `json:"avatar" gorm:"column:avatar;type:varchar(512);comment:头像URL"`
 
 	Xp int `json:"xp" gorm:"column:xp;type:int;comment:经验值"`
 
