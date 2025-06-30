@@ -22,3 +22,7 @@ func Get(s string) (string, error) {
 func Set(key string, value string, timeout time.Duration) error {
 	return global.Rdb.Set(context.Background(), key, value, timeout).Err()
 }
+
+func Remove(key string) error {
+	return global.Rdb.Del(context.Background(), key).Err()
+}

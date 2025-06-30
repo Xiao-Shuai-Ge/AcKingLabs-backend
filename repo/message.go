@@ -1,8 +1,13 @@
 package repo
 
 import (
+	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
+	"tgwp/log/zlog"
 	"tgwp/model"
+	"tgwp/utils/cacheUtils"
+	"time"
 )
 
 type MessageRepo struct {
@@ -16,7 +21,23 @@ func NewMessageRepo(db *gorm.DB) *MessageRepo {
 }
 
 func (r *MessageRepo) GetMessageCount(user_id int64) (system_count int64, like_count int64, comment_count int64, err error) {
+	// redis缓存查询
+	value, err := cacheUtils.Get(fmt.Sprintf("cache:message_count:%d", user_id))
+	if value != "" {
+		// 缓存命中
+		zlog.Debugf("缓存命中")
+		var data map[string]interface{}
+		err = json.Unmarshal([]byte(value), &data)
+		if err != nil {
+			return system_count, like_count, comment_count, err
+		}
+		system_count = int64(int(data["system_count"].(float64)))
+		like_count = int64(int(data["like_count"].(float64)))
+		comment_count = int64(int(data["comment_count"].(float64)))
+		return system_count, like_count, comment_count, nil
+	}
 
+	// system_count, err = r.DB.Model(&model.Message{}).Where("user_id = ? and type = 'system' ", user_id).Count(&system_count).Error
 	err = r.DB.Model(&model.Message{}).Where("user_id = ? and type = 'system' and is_read = 0 ", user_id).Count(&system_count).Error
 	if err != nil {
 		return
@@ -29,6 +50,22 @@ func (r *MessageRepo) GetMessageCount(user_id int64) (system_count int64, like_c
 	if err != nil {
 		return
 	}
+
+	// 缓存写入
+	data := map[string]interface{}{
+		"system_count":  system_count,
+		"like_count":    like_count,
+		"comment_count": comment_count,
+	}
+	newValue, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+	err = cacheUtils.Set(fmt.Sprintf("cache:message_count:%d", user_id), string(newValue), 5*time.Minute)
+	if err != nil {
+		return
+	}
+
 	return
 }
 

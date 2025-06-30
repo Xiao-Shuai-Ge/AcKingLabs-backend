@@ -14,6 +14,7 @@ import (
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils"
+	"tgwp/utils/cacheUtils"
 	"tgwp/utils/elasticSearchUtils"
 	"time"
 	"unicode/utf8"
@@ -361,6 +362,8 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 	if err != nil {
 		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
 	}
+	// 通知更新，删除对方消息缓存
+	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", post.UserID))
 	return
 }
 
@@ -483,6 +486,8 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		zlog.CtxErrorf(ctx, "发送评论通知失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+	// 通知更新，删除对方消息缓存
+	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", receiverID))
 	return
 }
 
@@ -647,6 +652,8 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 		// 发送失败，但不影响实际点赞
 		err = nil
 	}
+	// 通知更新，删除对方消息缓存
+	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", comment.UserID))
 	return
 }
 
