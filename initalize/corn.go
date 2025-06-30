@@ -26,6 +26,11 @@ func Cron() {
 	if err != nil {
 		zlog.Errorf("添加定时任务失败:%v", err)
 	}
+	// 每10分钟同步Elasticsearch索引
+	_, err = crontab.AddFunc("@every 10m", SyncElasticsearch)
+	if err != nil {
+		zlog.Errorf("添加定时任务失败:%v", err)
+	}
 	// 每30分钟更新比赛列表
 	_, err = crontab.AddFunc("@every 30m", UpdateContests)
 	if err != nil {
@@ -212,5 +217,15 @@ func AutoSignin() {
 				}
 			}
 		}
+	}
+}
+
+// SyncElasticsearch 更新Elasticsearch索引
+func SyncElasticsearch() {
+	zlog.Infof("开始同步Elasticsearch索引")
+	err := UpdateElasticsearch()
+	if err != nil {
+		zlog.Errorf("同步Elasticsearch索引失败: %v", err)
+		return
 	}
 }

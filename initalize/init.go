@@ -5,6 +5,7 @@ import (
 	"tgwp/cmd/flags"
 	"tgwp/global"
 	"tgwp/utils"
+	"tgwp/utils/ulearning"
 )
 
 func Init() {
@@ -49,6 +50,9 @@ func Init() {
 
 	//user.GetAllCourses()
 	//user.GetCourseActivities(151267)
+	teacher := ulearning.NewUser()
+	teacher.TeacherLogin()
+
 	//teacher.SigninByTeacher(842804, user.UserID)
 	//user.SigninByStudent(842804, 881864)
 

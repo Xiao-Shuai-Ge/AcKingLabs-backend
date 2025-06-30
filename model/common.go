@@ -37,6 +37,12 @@ func (b *TimeModel) BeforeCreate(db *gorm.DB) error {
 	return nil
 }
 
+func (b *TimeModel) BeforeUpdate(db *gorm.DB) error {
+	b.UpdatedTime = time.Now().UnixMilli()
+
+	return nil
+}
+
 type Ulearning struct {
 	ID int64 `json:"id" gorm:"column:id;primaryKey;type:bigint;type:bigint"`
 

@@ -30,10 +30,22 @@ func InitElasticsearch() {
 	}
 	zlog.Infof("ElasticSearch 初始化成功")
 
+	err = UpdateElasticsearch()
+	if err != nil {
+		zlog.Errorf("同步ElasticSearch数据失败: %v", err)
+		return
+	}
+}
+
+func UpdateElasticsearch() (err error) {
 	// 获取最近更新时间
 	var updateTime int64
 	updateTime = 0
 	m, err := elasticSearchUtils.Get(global.ESClient, "update_time", "post")
+	if err != nil {
+		zlog.Errorf("获取更新时间失败: %v", err)
+		return
+	}
 	if m == nil {
 		updateTime = 0
 	} else {
@@ -44,6 +56,10 @@ func InitElasticsearch() {
 
 	// 同步数据
 	posts, err := repo.NewPostRepo(global.DB).GetPostAfterUpdateTime(updateTime)
+	if err != nil {
+		zlog.Errorf("获取文章失败: %v", err)
+		return
+	}
 	zlog.Debugf("需要同步的文章数量为: %v", len(posts))
 
 	for _, post := range posts {
@@ -93,4 +109,5 @@ func InitElasticsearch() {
 		zlog.Errorf("更新更新时间失败: %v", err)
 		return
 	}
+	return
 }

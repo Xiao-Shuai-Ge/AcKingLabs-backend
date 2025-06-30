@@ -3,6 +3,7 @@ package elasticSearchUtils
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/elastic/go-elasticsearch/v8"
 	"strings"
 	"tgwp/log/zlog"
@@ -24,7 +25,7 @@ func Get(client *elasticsearch.Client, index string, id string) (map[string]inte
 
 	if getResp.IsError() {
 		zlog.Errorf("获取数据失败，状态码: %d", getResp.StatusCode)
-		return nil, err
+		return nil, errors.New("获取数据失败")
 	}
 
 	var r map[string]interface{}
