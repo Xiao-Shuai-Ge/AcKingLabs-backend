@@ -35,7 +35,7 @@ func NewLoginLogic() *LoginLogic {
 
 // SendCode 发送验证码
 func (l *LoginLogic) SendCode(ctx context.Context, req types.SendCodeReq) (resp types.SendCodeResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 验证邮箱格式
 	re := regexp.MustCompile(EMAIL_REGEX, 0)
 	if isMatch, _ := re.MatchString(req.Email); !isMatch {
@@ -61,7 +61,7 @@ func (l *LoginLogic) SendCode(ctx context.Context, req types.SendCodeReq) (resp 
 
 // Register 注册
 func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp types.RegisterResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 验证用户名格式
 	if len(req.Username) > 30 {
 		zlog.CtxInfof(ctx, "用户名格式错误: %v", err)
@@ -138,7 +138,7 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 
 // Login 登录
 func (l *LoginLogic) Login(ctx context.Context, req types.LoginReq) (resp types.LoginResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 验证邮箱格式
 	re := regexp.MustCompile(EMAIL_REGEX, 0)
 	if isMatch, _ := re.MatchString(req.Email); !isMatch {

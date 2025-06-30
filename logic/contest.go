@@ -23,7 +23,7 @@ func NewContestLogic() *ContestLogic {
 }
 
 func (l *ContestLogic) GetContestList(ctx context.Context, req types.GetContestListReq) (resp types.GetContestListResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 分各种情况查询比赛
 	var contests []model.Contest
 
@@ -62,7 +62,7 @@ func (l *ContestLogic) GetContestList(ctx context.Context, req types.GetContestL
 }
 
 func (l *ContestLogic) CreateContest(ctx context.Context, req types.CreateContestReq) (resp types.CreateContestResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 验证数据
 	// 1. 标题不能超过 30 个字符
 	if utf8.RuneCountInString(req.Title) > 50 {
@@ -108,7 +108,7 @@ func (l *ContestLogic) CreateContest(ctx context.Context, req types.CreateContes
 }
 
 func (l *ContestLogic) GetContestDetail(ctx context.Context, req types.GetContestDetailReq) (resp types.GetContestDetailResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
 	if err != nil {
@@ -137,7 +137,7 @@ func (l *ContestLogic) GetContestDetail(ctx context.Context, req types.GetContes
 }
 
 func (l *ContestLogic) BookingContest(ctx context.Context, req types.BookingContestReq) (resp types.BookingContestResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
 	if err != nil {
@@ -194,7 +194,7 @@ func (l *ContestLogic) BookingContest(ctx context.Context, req types.BookingCont
 }
 
 func (l *ContestLogic) IsBookingContest(ctx context.Context, req types.IsBookingContestReq) (resp types.IsBookingContestResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
 	if err != nil {
@@ -218,7 +218,7 @@ func (l *ContestLogic) IsBookingContest(ctx context.Context, req types.IsBooking
 }
 
 func (l *ContestLogic) RecommendContest(ctx context.Context, req types.RecommendContestReq) (resp types.RecommendContestResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
 	if err != nil {

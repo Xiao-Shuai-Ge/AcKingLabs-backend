@@ -1,10 +1,14 @@
 package repo
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"tgwp/log/zlog"
 	"tgwp/model"
+	"tgwp/utils/cacheUtils"
+	"time"
 )
 
 type PostRepo struct {
@@ -37,7 +41,24 @@ func (r *PostRepo) DeletePost(post model.Post) error {
 
 func (r *PostRepo) GetPostDetail(id int64) (model.Post, error) {
 	var post model.Post
-	err := r.DB.First(&post, id).Error
+	// redis缓存查询
+	value, err := cacheUtils.Get(fmt.Sprintf("cache:post:%d", id))
+	//zlog.Debugf("redis cache: %s", value)
+	if value != "" {
+		// 缓存命中
+		zlog.Debugf("缓存命中")
+		err = json.Unmarshal([]byte(value), &post)
+		return post, err
+	}
+	err = r.DB.First(&post, id).Error
+	// 缓存
+	if err == nil {
+		var value []byte
+		value, err = json.Marshal(post)
+		if err == nil {
+			err = cacheUtils.Set(fmt.Sprintf("cache:post:%d", id), string(value), time.Minute*5)
+		}
+	}
 	return post, err
 }
 

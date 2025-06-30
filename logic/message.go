@@ -21,7 +21,7 @@ func NewMessageLogic() *MessageLogic {
 }
 
 func (l *MessageLogic) GetMessageCount(ctx context.Context, req types.GetMessageCountReq) (resp types.GetMessageCountResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
@@ -39,7 +39,7 @@ func (l *MessageLogic) GetMessageCount(ctx context.Context, req types.GetMessage
 }
 
 func (l *MessageLogic) GetMessageList(ctx context.Context, req types.GetMessageListReq) (resp types.GetMessageListResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
@@ -69,7 +69,7 @@ func (l *MessageLogic) GetMessageList(ctx context.Context, req types.GetMessageL
 }
 
 func (l *MessageLogic) MarkReadMessage(ctx context.Context, req types.MarkReadMessageReq) (err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {

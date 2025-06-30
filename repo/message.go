@@ -16,6 +16,7 @@ func NewMessageRepo(db *gorm.DB) *MessageRepo {
 }
 
 func (r *MessageRepo) GetMessageCount(user_id int64) (system_count int64, like_count int64, comment_count int64, err error) {
+
 	err = r.DB.Model(&model.Message{}).Where("user_id = ? and type = 'system' and is_read = 0 ", user_id).Count(&system_count).Error
 	if err != nil {
 		return

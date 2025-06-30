@@ -29,13 +29,13 @@ const (
 )
 
 func (l *TemplateLogic) Way(ctx context.Context, req types.TemplateReq) (resp types.TemplateResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 
 	return
 }
 
 func (l *TemplateLogic) SigninList(ctx context.Context, req types.SigninListReq) (resp types.SigninListResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -110,7 +110,7 @@ func (l *TemplateLogic) SigninList(ctx context.Context, req types.SigninListReq)
 }
 
 func (l *TemplateLogic) Signin(ctx context.Context, req types.SigninReq) (resp types.SigninResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -148,7 +148,7 @@ func (l *TemplateLogic) Signin(ctx context.Context, req types.SigninReq) (resp t
 }
 
 func (l *TemplateLogic) SigninTeacher(ctx context.Context, req types.SigninTeacherReq) (resp types.SigninTeacherResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -191,7 +191,7 @@ func (l *TemplateLogic) SigninTeacher(ctx context.Context, req types.SigninTeach
 }
 
 func (l *TemplateLogic) GetAutoList(ctx context.Context, req types.GetAutoListReq) (resp types.GetAutoListResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
@@ -215,7 +215,7 @@ func (l *TemplateLogic) GetAutoList(ctx context.Context, req types.GetAutoListRe
 }
 
 func (l *TemplateLogic) AutoSetting(ctx context.Context, req types.AutoSettingReq) (resp types.AutoSettingResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {

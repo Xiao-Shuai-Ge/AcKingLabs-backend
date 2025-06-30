@@ -33,7 +33,7 @@ func NewUserLogic() *UserLogic {
 
 // GetUserInfo 获取用户信息
 func (l *UserLogic) GetUserInfo(ctx context.Context, req types.GetUserInfoReq) (resp types.GetUserInfoResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	zlog.CtxInfof(ctx, "获取用户信息 %s", req.ID)
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
@@ -60,7 +60,7 @@ func (l *UserLogic) GetUserInfo(ctx context.Context, req types.GetUserInfoReq) (
 
 // GetUserProfile 获取用户信息
 func (l *UserLogic) GetUserProfile(ctx context.Context, req types.GetUserProfileReq) (resp types.GetUserProfileResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -156,7 +156,7 @@ func RefreshCodeforcesRating(ctx context.Context, userID int64, codeforcesID str
 }
 
 func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfileReq) (resp types.SetUserProfileResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -250,7 +250,7 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 
 // SetUserRole 设置用户权限
 func (l *UserLogic) SetUserRole(ctx context.Context, req types.SetUserRoleReq) (resp types.SetUserRoleResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {

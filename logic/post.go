@@ -32,7 +32,7 @@ func NewPostLogic() *PostLogic {
 
 // CreatePost 创建帖子
 func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (resp types.CreatePostResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
@@ -115,7 +115,7 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 
 // EditPost 编辑帖子
 func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp types.EditPostResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -176,7 +176,7 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 
 // DeletePost 编辑帖子
 func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (resp types.DeletePostResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -214,7 +214,7 @@ func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (re
 }
 
 func (l *PostLogic) GetPostDetail(ctx context.Context, req types.GetPostDetailReq) (resp types.GetPostDetailResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -254,7 +254,7 @@ func (l *PostLogic) GetPostDetail(ctx context.Context, req types.GetPostDetailRe
 }
 
 func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp types.LikePostResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -365,7 +365,7 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 }
 
 func (l *PostLogic) GetLikePost(ctx context.Context, req types.GetLikePostReq) (resp types.GetLikePostResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -388,7 +388,7 @@ func (l *PostLogic) GetLikePost(ctx context.Context, req types.GetLikePostReq) (
 }
 
 func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentReq) (resp types.CreateCommentResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -487,7 +487,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 }
 
 func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommentsReq) (resp types.GetMoreCommentsResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	ID, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
@@ -527,7 +527,7 @@ func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommen
 }
 
 func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (resp types.LikeCommentResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	commentID, err := strconv.ParseInt(req.CommentID, 10, 64)
 	if err != nil {
@@ -651,7 +651,7 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 }
 
 func (l *PostLogic) GetLikeComment(ctx context.Context, req types.GetLikeCommentReq) (resp types.GetLikeCommentResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	commentID, err := strconv.ParseInt(req.CommentID, 10, 64)
 	if err != nil {
@@ -674,7 +674,7 @@ func (l *PostLogic) GetLikeComment(ctx context.Context, req types.GetLikeComment
 }
 
 func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq) (resp types.GetMorePostsResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	beforeID, err := strconv.ParseInt(req.BeforeID, 10, 64)
 	if err != nil {
@@ -753,7 +753,7 @@ func (l *PostLogic) GetMorePosts(ctx context.Context, req types.GetMorePostsReq)
 }
 
 func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq) (resp types.GetPagePostsResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 分各种情况查询帖子
 	var posts []model.Post
 
@@ -830,7 +830,7 @@ func (l *PostLogic) GetPagePosts(ctx context.Context, req types.GetPagePostsReq)
 }
 
 func (l *PostLogic) SetPostFeature(ctx context.Context, req types.SetPostFeatureReq) (resp types.SetPostFeatureResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64
 	postID, err := strconv.ParseInt(req.PostID, 10, 64)
 	if err != nil {
@@ -892,7 +892,7 @@ func GetWeekCode() string {
 }
 
 func (l *PostLogic) GetDiaryList(ctx context.Context, req types.GetDiaryListReq) (resp types.GetDiaryListResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// id 转化为 int64
 	userID, err := strconv.ParseInt(req.UserID, 10, 64)
 	if err != nil {
@@ -918,7 +918,7 @@ func (l *PostLogic) GetDiaryList(ctx context.Context, req types.GetDiaryListReq)
 }
 
 func (l *PostLogic) SearchPosts(ctx context.Context, req types.SearchPostsReq) (resp types.SearchPostsResp, err error) {
-	defer utils.RecordTime(time.Now())()
+	defer utils.CtxRecordTime(ctx, time.Now())()
 	// 查询 ElasticSearch
 	// 查询测试
 	query := `{

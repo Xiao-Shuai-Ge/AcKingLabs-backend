@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"math/rand"
 	"path/filepath"
@@ -102,6 +103,13 @@ func RecordTime(start time.Time) func() {
 	return func() {
 		end := time.Now()
 		zlog.Debugf("use time:%d ms", end.UnixMilli()-start.UnixMilli())
+	}
+}
+
+func CtxRecordTime(ctx context.Context, start time.Time) func() {
+	return func() {
+		end := time.Now()
+		zlog.CtxDebugf(ctx, "use time:%d ms", end.UnixMilli()-start.UnixMilli())
 	}
 }
 
