@@ -296,3 +296,28 @@ func (r *PostRepo) GetPostAfterUpdateTime(update_time int64) (posts []model.Post
 	err = r.DB.Model(&model.Post{}).Where("updated_time > ?", update_time).Find(&posts).Error
 	return posts, err
 }
+
+func (r *PostRepo) DeletePostLikeByPostID(post_id int64) (err error) {
+	err = r.DB.Model(&model.PostLike{}).Where("post_id = ?", post_id).Delete(&model.PostLike{}).Error
+	return
+}
+
+func (r *PostRepo) GetAllCommentsByPostID(post_id int64) (comments []model.Comment, err error) {
+	err = r.DB.Model(&model.Comment{}).Where("post_id = ?", post_id).Find(&comments).Error
+	return
+}
+
+func (r *PostRepo) GetAllChildCommentsByCommentID(comment_id int64) (comments []model.Comment, err error) {
+	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Find(&comments).Error
+	return
+}
+
+func (r *PostRepo) DeleteCommentLikeByCommentID(comment_id int64) (err error) {
+	err = r.DB.Model(&model.CommentLike{}).Where("comment_id = ?", comment_id).Delete(&model.CommentLike{}).Error
+	return
+}
+
+func (r *PostRepo) DeleteCommentByCommentID(comment_id int64) (err error) {
+	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Delete(&model.Comment{}).Error
+	return
+}

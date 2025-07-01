@@ -205,6 +205,36 @@ func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (re
 		zlog.CtxErrorf(ctx, "周记打卡不允许用户自己删除: %v", err)
 		return resp, response.ErrResp(err, response.DIARY_CANT_DELETE)
 	}
+	// 删除帖子相关点赞记录
+	err = repo.NewPostRepo(global.DB).DeletePostLikeByPostID(postID)
+	// 获取所有评论
+	comments, err := repo.NewPostRepo(global.DB).GetAllCommentsByPostID(postID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询评论失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	for _, comment := range comments {
+		// 删除点赞记录
+		err = repo.NewPostRepo(global.DB).DeleteCommentLikeByCommentID(comment.ID)
+		// 获取所有子评论
+		childComments, err := repo.NewPostRepo(global.DB).GetAllChildCommentsByCommentID(comment.ID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "查询子评论失败: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+		for _, childComment := range childComments {
+			// 删除子评论点赞记录
+			err = repo.NewPostRepo(global.DB).DeleteCommentLikeByCommentID(childComment.ID)
+			if err != nil {
+				zlog.CtxErrorf(ctx, "删除子评论点赞记录失败: %v", err)
+				return resp, response.ErrResp(err, response.DATABASE_ERROR)
+			}
+			// 删除子评论
+			err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID)
+		}
+		// 删除评论
+		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(comment.ID)
+	}
 	// 删除帖子
 	err = repo.NewPostRepo(global.DB).DeletePost(post)
 	if err != nil {

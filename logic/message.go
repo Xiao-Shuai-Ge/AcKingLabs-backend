@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"tgwp/global"
 	"tgwp/log/zlog"
@@ -10,6 +11,7 @@ import (
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils"
+	"tgwp/utils/cacheUtils"
 	"time"
 )
 
@@ -87,5 +89,7 @@ func (l *MessageLogic) MarkReadMessage(ctx context.Context, req types.MarkReadMe
 		zlog.CtxErrorf(ctx, "标记已读失败: %v", err)
 		return response.ErrResp(err, response.DATABASE_ERROR)
 	}
+	// 通知更新，删除对方消息缓存
+	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", userID))
 	return nil
 }
