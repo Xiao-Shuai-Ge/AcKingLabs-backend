@@ -521,6 +521,66 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	return
 }
 
+func (l *PostLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq) (resp types.DeleteCommentResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	// ID 转化为 int64
+	commentID, err := strconv.ParseInt(req.CommentID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.CommentID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	operatorID, err := strconv.ParseInt(req.OperatorID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 查询评论详情
+	var comment model.Comment
+	comment, err = repo.NewPostRepo(global.DB).GetCommentDetail(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询评论详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 判断是否有权限删除
+	if comment.UserID != operatorID && !(req.OperatorRole >= global.ROLE_ADMIN) {
+		zlog.CtxErrorf(ctx, "无权限删除评论")
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+	// 删除点赞记录
+	err = repo.NewPostRepo(global.DB).DeleteCommentLikeByCommentID(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除点赞记录失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 获取全部子评论
+	childComments, err := repo.NewPostRepo(global.DB).GetAllChildCommentsByCommentID(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询子评论失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	for _, childComment := range childComments {
+		// 删除子评论点赞记录
+		err = repo.NewPostRepo(global.DB).DeleteCommentLikeByCommentID(childComment.ID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "删除子评论点赞记录失败: %v", err)
+			return
+		}
+		// 删除子评论
+		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "删除子评论失败: %v", err)
+			return
+		}
+	}
+	// 删除评论
+	err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	return
+}
+
 func (l *PostLogic) GetMoreComments(ctx context.Context, req types.GetMoreCommentsReq) (resp types.GetMoreCommentsResp, err error) {
 	defer utils.CtxRecordTime(ctx, time.Now())()
 	// ID 转化为 int64

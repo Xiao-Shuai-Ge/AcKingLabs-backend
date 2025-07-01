@@ -118,6 +118,20 @@ func CreateComment(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// DeleteComment 删除评论
+func DeleteComment(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeleteCommentReq](c)
+	if err != nil {
+		return
+	}
+	req.OperatorID = jwtUtils.GetUserId(c)
+	req.OperatorRole = jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "删除评论请求: %v", req)
+	resp, err := logic.NewPostLogic().DeleteComment(ctx, req)
+	response.Response(c, resp, err)
+}
+
 // GetMoreComments 获取更多评论
 func GetMoreComments(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)

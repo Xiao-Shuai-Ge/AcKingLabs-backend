@@ -99,6 +99,15 @@ type CreateCommentResp struct {
 	ID int64 `json:"id,string"`
 }
 
+type DeleteCommentReq struct {
+	OperatorID   string `json:"-"`
+	OperatorRole int    `json:"-"`
+
+	CommentID string `json:"comment_id"`
+}
+
+type DeleteCommentResp struct{}
+
 type GetMoreCommentsReq struct {
 	ID       string `form:"id"`
 	IsChild  bool   `form:"is_child"`
