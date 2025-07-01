@@ -60,3 +60,22 @@ type SetUserRoleReq struct {
 
 type SetUserRoleResp struct {
 }
+
+type GetRankingsReq struct {
+	Page  int `form:"page"`
+	Count int `form:"count"`
+}
+
+type Ranking struct {
+	ID       int64  `json:"id,string"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+	Xp       int    `json:"xp"`
+	Role     int    `json:"role"`
+}
+
+type GetRankingsResp struct {
+	Rankings  []Ranking `json:"rankings"`
+	Length    int       `json:"length"`
+	PageTotal int64     `json:"page_total"`
+}

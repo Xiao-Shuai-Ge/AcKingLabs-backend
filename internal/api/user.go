@@ -77,3 +77,15 @@ func SetRole(c *gin.Context) {
 	resp, err := logic.NewUserLogic().SetUserRole(ctx, req)
 	response.Response(c, resp, err)
 }
+
+// GetRankings 获取排行榜
+func GetRankings(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetRankingsReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "获取排行榜请求: %v", req)
+	resp, err := logic.NewUserLogic().GetRankings(ctx, req)
+	response.Response(c, resp, err)
+}

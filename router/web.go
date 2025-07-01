@@ -75,6 +75,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
 		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetProfile)
 		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
+
+		rg.GET("/rankings", middleware.Limiter(rate.Every(time.Second)*2, 4), api.GetRankings)
 	})
 
 	routeManager.RegisterMessageRoutes(func(rg *gin.RouterGroup) {

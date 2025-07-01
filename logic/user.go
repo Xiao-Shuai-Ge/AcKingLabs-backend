@@ -295,3 +295,31 @@ func (l *UserLogic) SetUserRole(ctx context.Context, req types.SetUserRoleReq) (
 
 	return resp, nil
 }
+
+func (l *UserLogic) GetRankings(ctx context.Context, req types.GetRankingsReq) (resp types.GetRankingsResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	// 获取排名
+	rankings, total, err := repo.NewUserRepo(global.DB).GetRankings(req.Page, req.Count)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取排名失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 填入参数
+	for _, user := range rankings {
+		resp.Rankings = append(resp.Rankings, types.Ranking{
+			ID:       user.ID,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+			Xp:       user.Xp,
+			Role:     user.Role,
+		})
+	}
+	if int(total)%req.Count == 0 {
+		resp.PageTotal = int64(int(total) / req.Count)
+	} else {
+		resp.PageTotal = int64(int(total)/req.Count + 1)
+	}
+	resp.Length = len(rankings)
+
+	return resp, nil
+}

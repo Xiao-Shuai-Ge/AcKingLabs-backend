@@ -44,3 +44,12 @@ func (r *UserRepo) AddUserXp(id int64, xp int) error {
 	err := r.DB.Model(&model.User{}).Where("id = ?", id).Update("xp", gorm.Expr("xp + ?", xp)).Error
 	return err
 }
+
+func (r *UserRepo) GetRankings(page int, count int) ([]model.User, int64, error) {
+	var users []model.User
+	offset := (page - 1) * count
+	err := r.DB.Model(&model.User{}).Order("xp DESC").Offset(offset).Limit(count).Find(&users).Error
+	var total int64
+	r.DB.Model(&model.User{}).Count(&total)
+	return users, total, err
+}

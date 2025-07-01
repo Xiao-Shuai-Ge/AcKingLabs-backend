@@ -61,9 +61,9 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		}
 	}
 	// 判断数据范围
-	// 1. 标题不能超过 30 个字符
-	if utf8.RuneCountInString(req.Title) > 30 {
-		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
+	// 1. 标题不能超过 50 个字符
+	if utf8.RuneCountInString(req.Title) > 50 {
+		zlog.CtxErrorf(ctx, "标题不能超过 50 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 2. 内容不能超过 20000 个字符
