@@ -92,4 +92,5 @@ func (l *MessageLogic) MarkReadMessage(ctx context.Context, req types.MarkReadMe
 	// 通知更新，删除对方消息缓存
 	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", userID))
 	return nil
+
 }
