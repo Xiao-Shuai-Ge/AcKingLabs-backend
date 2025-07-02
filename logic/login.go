@@ -219,6 +219,6 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 }
 
 func (l *LoginLogic) TokenTest(ctx context.Context, req types.TokenTestReq) (resp types.TokenTestResp, err error) {
-	resp.Msg = "test"
+	resp.Msg = "test1"
 	return
 }
