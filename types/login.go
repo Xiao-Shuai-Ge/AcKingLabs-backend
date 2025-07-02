@@ -42,4 +42,5 @@ type TokenTestReq struct {
 }
 
 type TokenTestResp struct {
+	Msg string `json:"msg"`
 }
