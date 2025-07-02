@@ -23,4 +23,4 @@ jobs:
           docker buildx build . \
             --platform linux/amd64 \
             --push \
-            --tag ${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAME_SPACE }}/acking:lastest
+            --tag ${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAME_SPACE }}/acking:latest
