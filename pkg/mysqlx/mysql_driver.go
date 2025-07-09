@@ -3,6 +3,7 @@ package mysqlx
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"tgwp/configs"
 	"tgwp/log/zlog"
 	"tgwp/pkg/database"
@@ -14,7 +15,9 @@ type Mysql struct {
 // InitDataBases 初始化
 func (m *Mysql) InitDataBase(config configs.Config) (*gorm.DB, error) {
 	dsn := m.GetDsn(config)
-	db, err := gorm.Open(mysql.Open(dsn))
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		zlog.Panicf("MySQL无法连接数据库！: %v", err)
 		return nil, err

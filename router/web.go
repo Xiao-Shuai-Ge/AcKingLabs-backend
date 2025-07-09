@@ -3,7 +3,9 @@ package routerg
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"golang.org/x/time/rate"
+	"net/http"
 	"tgwp/configs"
 	"tgwp/global"
 	"tgwp/internal/api"
@@ -34,12 +36,27 @@ func listen() (*gin.Engine, error) {
 	routeManager := manager.NewRouteManager(r)
 	// 注册各业务路由组的具体路由
 	registerRoutes(routeManager)
+	// 启动 WebSocket 服务
+	startWebsocket(r)
 	return r, nil
+}
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // 允许跨域（生产环境需严格限制）
+	},
+}
+
+func startWebsocket(r *gin.Engine) {
+	manager.WebsocketManager = manager.NewClientManager()
+	go manager.WebsocketManager.Start()
+
+	// 注册 WebSocket 路由
+	r.GET("/ws", api.WebsocketAPI)
 }
 
 // registerRoutes 注册各业务路由的具体处理函数
 func registerRoutes(routeManager *manager.RouteManager) {
-
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/test", middleware.Limiter(rate.Every(time.Hour)*1, 10), api.Template)
