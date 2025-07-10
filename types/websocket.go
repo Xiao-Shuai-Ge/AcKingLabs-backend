@@ -16,3 +16,11 @@ type ChatMessageResp struct {
 	UserID    int64  `json:"user_id,string"`
 	Timestamp int64  `json:"timestamp"`
 }
+
+type AiMessageResp struct {
+	Seq       int    `json:"seq"`
+	Type      string `json:"type"`
+	ID        int64  `json:"id,string"`
+	Content   string `json:"content"`
+	Timestamp int64  `json:"timestamp"`
+}

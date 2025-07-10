@@ -7,6 +7,7 @@ type Config struct {
 	Log           LoggerConfig        `mapstructure:"log"`
 	DB            DBConfig            `mapstructure:"database"`
 	Redis         RedisConfig         `mapstructure:"redis"`
+	Coze          CozeConfig          `mapstructure:"coze"`
 	Email         EmailConfig         `mapstructure:"email"`
 	JWT           JWTConfig           `mapstructure:"jwt"`
 	Oss           OssConfig           `mapstructure:"oss"`
@@ -38,6 +39,11 @@ type RedisConfig struct {
 	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type CozeConfig struct {
+	Token string `mapstructure:"token"`
+	BotID string `mapstructure:"botID"`
 }
 
 type EmailConfig struct {
