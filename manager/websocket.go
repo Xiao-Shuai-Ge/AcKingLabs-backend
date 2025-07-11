@@ -42,11 +42,27 @@ func (cm *ClientManager) Start() {
 			for client := range cm.Clients {
 				err := client.WriteMessage(websocket.TextMessage, []byte(msg.Content))
 				if err != nil {
+					zlog.Errorf("发送群发消息失败: %v", err)
 					client.Close()
 					delete(cm.Clients, client)
+					delete(cm.Users, msg.To)
+					cm.Mutex.Unlock()
 				}
 			}
-			cm.Mutex.Unlock()
+		} else if msg.ToType == "user" {
+			zlog.Debugf("私聊消息: %v", msg.Content)
+			client, ok := cm.Users[msg.To]
+			if ok {
+				err := client.WriteMessage(websocket.TextMessage, []byte(msg.Content))
+				if err != nil {
+					zlog.Errorf("发送私聊消息失败: %v", err)
+					client.Close()
+					delete(cm.Clients, client)
+					delete(cm.Users, msg.To)
+					cm.Mutex.Unlock()
+				}
+			}
 		}
+		cm.Mutex.Unlock()
 	}
 }

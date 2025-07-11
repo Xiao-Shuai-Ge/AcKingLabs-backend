@@ -120,7 +120,7 @@ func Test() {
 			Type:      "chat",
 			ID:        global.SnowflakeNode.Generate().Int64(),
 			Content:   "hello world",
-			UserID:    1908927295461003264,
+			UserID:    strconv.Itoa(1908927295461003264),
 			Timestamp: time.Now().UnixMilli(),
 		}
 		contentJson, _ := json.Marshal(&content)
