@@ -225,6 +225,8 @@ func (l *WebsocketLogic) AiChat(content string) {
 	} else {
 		zlog.Debugf("redis 获取会话id: %v", value)
 		conversationID = value
+		// 续长会话时间
+		global.Rdb.Expire(ctx, REDIS_AI_CONVERSATION_ID, time.Minute*5)
 	}
 	zlog.Debugf("会话id: %v", conversationID)
 
