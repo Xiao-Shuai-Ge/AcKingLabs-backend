@@ -32,6 +32,12 @@ func (r *PostRepo) CreatePost(post model.Post) error {
 }
 
 func (r *PostRepo) UpdatePost(post model.Post) error {
+	// 更新缓存
+	value, err := json.Marshal(post)
+	if err == nil {
+		err = cacheUtils.Set(fmt.Sprintf("cache:post:%d", post.ID), string(value), time.Minute*5)
+	}
+
 	return r.DB.Save(&post).Error
 }
 

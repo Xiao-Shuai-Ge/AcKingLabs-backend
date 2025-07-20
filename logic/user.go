@@ -206,6 +206,11 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "其他字段长度不能超过 30")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	// 6. 头像不能为 gif 格式
+	if strings.HasSuffix(req.Avatar, ".gif") {
+		zlog.CtxErrorf(ctx, "头像 URL 不能为 gif 格式")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
 
 	// 拿出先前的用户信息
 	user, err := repo.NewUserRepo(global.DB).GetUserProfileByID(userID)
