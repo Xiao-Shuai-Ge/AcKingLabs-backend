@@ -11,7 +11,7 @@ const (
 	ATOKEN_EFFECTIVE_TIME    = time.Hour * 2
 	//ATOKEN_EFFECTIVE_TIME = time.Second * 10
 
-	RTOKEN_EFFECTIVE_TIME = time.Hour * 24 * 7
+	RTOKEN_EFFECTIVE_TIME = time.Hour * 24 * 7 * 2
 	AUTH_ENUMS_ATOKEN     = "atoken"
 	AUTH_ENUMS_RTOKEN     = "rtoken"
 	DEFAULT_NODE_ID       = 1

@@ -136,7 +136,7 @@ func (r *PostRepo) GetMoreComments(post_id int64, before int64, count int) ([]mo
 
 func (r *PostRepo) GetMoreChildComments(father_id int64, before int64, count int) ([]model.Comment, error) {
 	var comments []model.Comment
-	err := r.DB.Model(&model.Comment{}).Where("father_id = ? AND id < ? ", father_id, before).Order("id DESC").Limit(count).Find(&comments).Error
+	err := r.DB.Model(&model.Comment{}).Where("father_id = ? AND id < ? ", father_id, before).Order("id").Limit(count).Find(&comments).Error
 	return comments, err
 }
 
