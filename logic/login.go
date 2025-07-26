@@ -89,6 +89,11 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 		zlog.CtxInfof(ctx, "验证码错误: %v", err)
 		return resp, response.ErrResp(err, response.VERIFY_CODE_VALID)
 	}
+	// 按照内部邀请码
+	if req.InvitationCode != global.Config.Invitation.Code {
+		zlog.CtxInfof(ctx, "邀请码错误: %v", err)
+		return resp, response.ErrResp(err, response.INVITATION_CODE_VALID)
+	}
 	// 查询用户
 	var user model.User
 	user, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)

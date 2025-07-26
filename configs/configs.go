@@ -13,6 +13,7 @@ type Config struct {
 	Oss           OssConfig           `mapstructure:"oss"`
 	Elasticsearch ElasticsearchConfig `mapstructure:"elasticsearch"`
 	Ulearning     UlearningConfig     `mapstructure:"ulearning"`
+	Invitation    InvitationConfig    `mapstructure:"invitation"`
 }
 
 type ApplicationConfig struct {
@@ -86,4 +87,8 @@ type UlearningConfig struct {
 	Login                  string `mapstructure:"login"`
 	Teacher                string `mapstructure:"teacher"`
 	Password               string `mapstructure:"password"`
+}
+
+type InvitationConfig struct {
+	Code string `mapstructure:"code"`
 }

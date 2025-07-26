@@ -47,6 +47,7 @@ var (
 	USER_NOT_EXIST          = MsgCode{10011, "用户不存在"}
 	DIARY_ALREADY_EXIST     = MsgCode{10012, "周记已存在"}
 	DIARY_CANT_DELETE       = MsgCode{10013, "周记不能删除"}
+	INVITATION_CODE_VALID   = MsgCode{10014, "邀请码无效"}
 
 	/* 用户错误 20000 ~ 29999 */
 	USER_NOT_LOGIN = MsgCode{20001, "用户未登录"}

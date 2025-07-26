@@ -8,10 +8,11 @@ type SendCodeResp struct {
 }
 
 type RegisterReq struct {
-	Email    string `json:"email"`
-	Code     string `json:"code"`
-	Password string `json:"password"`
-	Username string `json:"username"`
+	Email          string `json:"email"`
+	Code           string `json:"code"`
+	Password       string `json:"password"`
+	Username       string `json:"username"`
+	InvitationCode string `json:"invitation_code"`
 }
 
 type RegisterResp struct {
