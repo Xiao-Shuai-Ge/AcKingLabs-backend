@@ -235,3 +235,105 @@ func (l *ContestLogic) RecommendContest(ctx context.Context, req types.Recommend
 	resp.IsRecommend = req.IsRecommend
 	return
 }
+
+func (l *ContestLogic) UpdateContest(ctx context.Context, req types.UpdateContestReq) (resp types.UpdateContestResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	// ID 转化为 int64
+	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ContestID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 验证数据
+	// 1. 标题不能超过 50 个字符
+	if utf8.RuneCountInString(req.Title) > 50 {
+		zlog.CtxErrorf(ctx, "标题不能超过 50 个字符")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 2. Url 不能超过 255 个字符
+	if utf8.RuneCountInString(req.Url) > 255 {
+		zlog.CtxErrorf(ctx, "Url 不能超过 255 个字符")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 3. 标题 和 Url 去掉前后空格后均不能为空
+	if strings.Trim(req.Title, " ") == "" || strings.Trim(req.Url, " ") == "" {
+		zlog.CtxErrorf(ctx, "标题和 Url 不能为空")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 4. 开始时间不能大于结束时间
+	if req.StartTime > req.EndTime {
+		zlog.CtxErrorf(ctx, "开始时间不能大于结束时间")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 验证比赛是否存在
+	var isExists bool
+	isExists, err = repo.NewContestRepo(global.DB).IsContestExistsByID(contestID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询比赛失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	} else if !isExists {
+		zlog.CtxErrorf(ctx, "比赛不存在")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 组装更新数据
+	contest := model.Contest{
+		Title:     req.Title,
+		StartTime: req.StartTime,
+		EndTime:   req.EndTime,
+		Duration:  (req.EndTime - req.StartTime) / 1000,
+		Url:       req.Url,
+	}
+
+	// 更新数据库
+	err = repo.NewContestRepo(global.DB).UpdateContestByID(contestID, contest)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "更新比赛失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "更新比赛成功: contestID=%d", contestID)
+	resp.Success = true
+	return
+}
+
+func (l *ContestLogic) DeleteContest(ctx context.Context, req types.DeleteContestReq) (resp types.DeleteContestResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	// ID 转化为 int64
+	contestID, err := strconv.ParseInt(req.ContestID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.ContestID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 验证比赛是否存在
+	var isExists bool
+	isExists, err = repo.NewContestRepo(global.DB).IsContestExistsByID(contestID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询比赛失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	} else if !isExists {
+		zlog.CtxErrorf(ctx, "比赛不存在")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 删除比赛相关的预约记录
+	err = repo.NewContestRepo(global.DB).RemoveBookingByContestID(contestID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除比赛预约记录失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 删除比赛
+	err = repo.NewContestRepo(global.DB).DeleteContestByID(contestID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除比赛失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "删除比赛成功: contestID=%d", contestID)
+	resp.Success = true
+	return
+}

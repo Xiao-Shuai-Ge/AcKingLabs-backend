@@ -1,0 +1,126 @@
+---
+alwaysApply: true
+---
+
+# AcKingLabs Backend Cursor Rules
+
+## 项目架构风格
+- 遵循分层架构：api -> logic -> repo -> model
+- 使用依赖注入模式，通过构造函数初始化
+- 全局变量统一在 global 包管理
+- 配置统一在 configs 包管理
+
+## 代码规范
+- 使用中文注释，注释要简洁明了
+- 函数命名采用驼峰命名法，首字母大写表示公开
+- 结构体字段使用 json 和 gorm 标签
+- 错误处理使用 response.ErrResp() 统一包装
+- 日志使用 zlog 包，包含上下文信息
+
+## 文件组织
+- API 层：internal/api/ 处理 HTTP 请求
+- 逻辑层：logic/ 处理业务逻辑
+- 数据层：repo/ 处理数据库操作
+- 模型层：model/ 定义数据结构
+- 类型层：types/ 定义请求响应结构
+- 工具层：utils/ 提供通用工具函数
+
+## 中间件使用
+- 认证：middleware.Authentication(role)
+- 限流：middleware.Limiter(rate, burst)
+- 跨域：middleware.CORS
+- 追踪：middleware.Trace
+
+## 数据库操作
+- 使用 GORM 进行数据库操作
+- 模型继承 TimeModel 包含时间字段
+- 使用雪花算法生成 ID
+- 数据库连接通过 global.DB 获取
+
+## 响应格式
+- 统一使用 response.Response() 返回
+- 错误码使用 response 包中定义的常量
+- 成功响应包含 data 字段
+- 错误响应包含 code 和 msg 字段
+
+## 日志规范
+- 使用 zlog.CtxInfof/CtxErrorf 记录日志
+- 包含请求上下文信息
+- 记录关键业务操作和错误信息
+- 使用 defer utils.CtxRecordTime() 记录执行时间
+
+## 权限控制
+- 角色等级：0-游客 1-普通用户 2-正式成员 3-管理员 4-超级管理员
+- 使用 JWT Token 进行身份验证
+- 权限检查在中间件层进行
+
+## 配置管理
+- 使用 Viper 管理配置文件
+- 配置结构体使用 mapstructure 标签
+- 敏感信息通过环境变量或配置文件管理
+
+## 工具函数
+- 通用工具函数放在 utils 包
+- 使用泛型提高代码复用性
+- 提供常用的字符串、时间、数学运算函数
+# AcKingLabs Backend Cursor Rules
+
+## 项目架构风格
+- 遵循分层架构：api -> logic -> repo -> model
+- 使用依赖注入模式，通过构造函数初始化
+- 全局变量统一在 global 包管理
+- 配置统一在 configs 包管理
+
+## 代码规范
+- 使用中文注释，注释要简洁明了
+- 函数命名采用驼峰命名法，首字母大写表示公开
+- 结构体字段使用 json 和 gorm 标签
+- 错误处理使用 response.ErrResp() 统一包装
+- 日志使用 zlog 包，包含上下文信息
+
+## 文件组织
+- API 层：internal/api/ 处理 HTTP 请求
+- 逻辑层：logic/ 处理业务逻辑
+- 数据层：repo/ 处理数据库操作
+- 模型层：model/ 定义数据结构
+- 类型层：types/ 定义请求响应结构
+- 工具层：utils/ 提供通用工具函数
+
+## 中间件使用
+- 认证：middleware.Authentication(role)
+- 限流：middleware.Limiter(rate, burst)
+- 跨域：middleware.CORS
+- 追踪：middleware.Trace
+
+## 数据库操作
+- 使用 GORM 进行数据库操作
+- 模型继承 TimeModel 包含时间字段
+- 使用雪花算法生成 ID
+- 数据库连接通过 global.DB 获取
+
+## 响应格式
+- 统一使用 response.Response() 返回
+- 错误码使用 response 包中定义的常量
+- 成功响应包含 data 字段
+- 错误响应包含 code 和 msg 字段
+
+## 日志规范
+- 使用 zlog.CtxInfof/CtxErrorf 记录日志
+- 包含请求上下文信息
+- 记录关键业务操作和错误信息
+- 使用 defer utils.CtxRecordTime() 记录执行时间
+
+## 权限控制
+- 角色等级：0-游客 1-普通用户 2-正式成员 3-管理员 4-超级管理员
+- 使用 JWT Token 进行身份验证
+- 权限检查在中间件层进行
+
+## 配置管理
+- 使用 Viper 管理配置文件
+- 配置结构体使用 mapstructure 标签
+- 敏感信息通过环境变量或配置文件管理
+
+## 工具函数
+- 通用工具函数放在 utils 包
+- 使用泛型提高代码复用性
+- 提供常用的字符串、时间、数学运算函数

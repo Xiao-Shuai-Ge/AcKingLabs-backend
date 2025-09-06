@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"tgwp/log/zlog"
 	"tgwp/logic"
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils/jwtUtils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetContestList 获取比赛列表请求
@@ -78,5 +79,29 @@ func RecommendContest(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "推荐比赛请求: %v", req)
 	resp, err := logic.NewContestLogic().RecommendContest(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// UpdateContest 修改比赛请求
+func UpdateContest(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.UpdateContestReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "修改比赛请求: %v", req)
+	resp, err := logic.NewContestLogic().UpdateContest(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// DeleteContest 删除比赛请求
+func DeleteContest(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeleteContestReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "删除比赛请求: %v", req)
+	resp, err := logic.NewContestLogic().DeleteContest(ctx, req)
 	response.Response(c, resp, err)
 }

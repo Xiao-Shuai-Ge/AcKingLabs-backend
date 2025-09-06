@@ -23,3 +23,6 @@ go.work.sum
 config.yaml
 # env file
 .env
+
+*.xml
+linux_linux

@@ -68,3 +68,23 @@ type RecommendContestReq struct {
 type RecommendContestResp struct {
 	IsRecommend bool `json:"is_recommend"`
 }
+
+type UpdateContestReq struct {
+	ContestID string `json:"contest_id"`
+	Title     string `json:"title"`
+	StartTime int64  `json:"start_time"`
+	EndTime   int64  `json:"end_time"`
+	Url       string `json:"url"`
+}
+
+type UpdateContestResp struct {
+	Success bool `json:"success"`
+}
+
+type DeleteContestReq struct {
+	ContestID string `json:"contest_id"`
+}
+
+type DeleteContestResp struct {
+	Success bool `json:"success"`
+}

@@ -2,9 +2,6 @@ package routerg
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"golang.org/x/time/rate"
 	"net/http"
 	"tgwp/configs"
 	"tgwp/global"
@@ -13,6 +10,10 @@ import (
 	"tgwp/manager"
 	"tgwp/middleware"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"golang.org/x/time/rate"
 )
 
 // RunServer 启动服务器 路由层
@@ -137,6 +138,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestList)
 
 		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.CreateContest)
+		rg.POST("/update", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.UpdateContest)
+		rg.POST("/delete", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.DeleteContest)
 		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestDetail)
 
 		rg.POST("/booking", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.BookingContest)

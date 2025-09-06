@@ -1,10 +1,11 @@
 package repo
 
 import (
-	"gorm.io/gorm"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type ContestRepo struct {
@@ -114,4 +115,14 @@ func (r *ContestRepo) RemoveBookingByContestID(contestID int64) error {
 
 func (r *ContestRepo) SetContestRecommend(contestID int64, isRecommend bool) error {
 	return r.DB.Model(&model.Contest{}).Where("id = ?", contestID).Update("is_recommend", isRecommend).Error
+}
+
+// UpdateContestByID 根据ID更新比赛信息
+func (r *ContestRepo) UpdateContestByID(contestID int64, contest model.Contest) error {
+	return r.DB.Model(&model.Contest{}).Where("id = ?", contestID).Updates(&contest).Error
+}
+
+// DeleteContestByID 根据ID删除比赛
+func (r *ContestRepo) DeleteContestByID(contestID int64) error {
+	return r.DB.Where("id = ?", contestID).Delete(&model.Contest{}).Error
 }
