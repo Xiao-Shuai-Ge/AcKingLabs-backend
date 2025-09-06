@@ -4,20 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"tgwp/global"
+	"tgwp/internal/utils/messageService"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"tgwp/repo"
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils"
-	"tgwp/utils/cacheUtils"
 	"tgwp/utils/elasticSearchUtils"
 	"time"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -105,11 +106,30 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 	if req.IsPrivate == false {
 		addXp = 8
 	}
+
+	// 如果是帖子而不是周记，不参与经验值计算
+	if req.Type != "diary" {
+		return
+	}
+
 	err = repo.NewUserRepo(global.DB).AddUserXp(userID, addXp)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "给作者加 XP 失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+
+	// 发送经验增加通知
+	var url string
+	if req.Type == "diary" {
+		url = fmt.Sprintf("/diary/%d", id)
+	} else {
+		url = fmt.Sprintf("/learn/%d", id)
+	}
+	reason := "发布帖子"
+	if req.Type == "diary" {
+		reason = "发布周记"
+	}
+	messageService.SendSystemMessage(userID, fmt.Sprintf("获得 %d 经验值：%s《%s》", addXp, reason, req.Title), url)
 
 	return
 }
@@ -335,6 +355,14 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 					zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
 					return resp, response.ErrResp(err, response.DATABASE_ERROR)
 				}
+				// 发送经验增加通知
+				var url string
+				if post.Type == "diary" {
+					url = fmt.Sprintf("/diary/%d", post.ID)
+				} else {
+					url = fmt.Sprintf("/learn/%d", post.ID)
+				}
+				messageService.SendSystemMessage(post.UserID, fmt.Sprintf("获得 5 经验值：管理员点赞帖子《%s》", post.Title), url)
 			}
 		}
 		// 点赞
@@ -371,29 +399,19 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
-	// 发送通知
-	messageID := global.SnowflakeNode.Generate().Int64()
+	// 使用新的消息服务发送通知
 	var url string
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
 	} else {
 		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
-	message := model.Message{
-		ID:       messageID,
-		UserID:   post.UserID,
-		SenderID: operatorID,
-		Type:     "like",
-		Content:  fmt.Sprintf("赞了你的帖子 《%s》", post.Title),
-		Url:      url,
-		IsRead:   false,
-	}
-	err = repo.NewMessageRepo(global.DB).SendMessage(message)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
-	}
-	// 通知更新，删除对方消息缓存
-	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", post.UserID))
+	messageService.SendLikeMessageIfNotSelf(
+		post.UserID,
+		operatorID,
+		fmt.Sprintf("赞了你的帖子 《%s》", post.Title),
+		url,
+	)
 	return
 }
 
@@ -475,7 +493,6 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
 	contentShort = utils.TruncateString(contentShort, 20)
 	// 发送通知
-	messageID := global.SnowflakeNode.Generate().Int64()
 	var url string
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
@@ -483,41 +500,33 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
 	// 判断是几级评论，给出对应的提示
-	var content string
-	var receiverID int64
 	if fatherID == 0 {
-		content = fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort)
-		receiverID = post.UserID
+		// 一级评论：只给帖子作者发送通知
+		content := fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort)
+		messageService.SendCommentMessageIfNotSelf(post.UserID, userID, content, url)
 	} else {
+		// 子评论：需要给帖主和评论作者都发送通知
 		var fatherComment model.Comment
 		fatherComment, err = repo.NewPostRepo(global.DB).GetCommentDetail(fatherID)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "查询父评论详情失败: %v", err)
 			return resp, response.ErrResp(err, response.DATABASE_ERROR)
 		}
+
 		fatherContentShort := fatherComment.Content
 		fatherContentShort = strings.ReplaceAll(fatherContentShort, "\n", " ")
 		fatherContentShort = utils.TruncateString(fatherContentShort, 20)
-		content = fmt.Sprintf("在你的评论 [%s] 回复了: [%s]", fatherContentShort, contentShort)
-		receiverID = fatherComment.UserID
+
+		// 给评论作者发送通知：你的评论被回复了
+		commentContent := fmt.Sprintf("在你的评论 [%s] 回复了: [%s]", fatherContentShort, contentShort)
+		messageService.SendCommentMessageIfNotSelf(fatherComment.UserID, userID, commentContent, url)
+
+		// 给帖子作者发送通知：你的帖子有新回复（如果不是同一个人）
+		if post.UserID != fatherComment.UserID {
+			postContent := fmt.Sprintf("在你的帖子 《%s》 发布子评论: [%s]", post.Title, contentShort)
+			messageService.SendCommentMessageIfNotSelf(post.UserID, userID, postContent, url)
+		}
 	}
-	// 发送通知
-	message := model.Message{
-		ID:       messageID,
-		UserID:   receiverID,
-		SenderID: userID,
-		Type:     "comment",
-		Content:  content,
-		Url:      url,
-		IsRead:   false,
-	}
-	err = repo.NewMessageRepo(global.DB).SendMessage(message)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "发送评论通知失败: %v", err)
-		return resp, response.ErrResp(err, response.DATABASE_ERROR)
-	}
-	// 通知更新，删除对方消息缓存
-	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", receiverID))
 	return
 }
 
@@ -720,30 +729,19 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
 	contentShort = utils.TruncateString(contentShort, 20)
 	// 发送通知
-	messageID := global.SnowflakeNode.Generate().Int64()
 	var url string
 	if post.Type == "diary" {
 		url = fmt.Sprintf("/diary/%d", post.ID)
 	} else {
 		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
-	message := model.Message{
-		ID:       messageID,
-		UserID:   comment.UserID,
-		SenderID: operatorID,
-		Type:     "like",
-		Content:  fmt.Sprintf("赞了你的评论 [ %s ]", contentShort),
-		Url:      url,
-		IsRead:   false,
-	}
-	err = repo.NewMessageRepo(global.DB).SendMessage(message)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "发送点赞通知失败: %v", err)
-		// 发送失败，但不影响实际点赞
-		err = nil
-	}
-	// 通知更新，删除对方消息缓存
-	cacheUtils.Remove(fmt.Sprintf("cache:message_count:%d", comment.UserID))
+	// 使用新的消息服务发送通知
+	messageService.SendLikeMessageIfNotSelf(
+		comment.UserID,
+		operatorID,
+		fmt.Sprintf("赞了你的评论 [ %s ]", contentShort),
+		url,
+	)
 	return
 }
 
@@ -952,6 +950,15 @@ func (l *PostLogic) SetPostFeature(ctx context.Context, req types.SetPostFeature
 		zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+
+	// 发送经验增加通知
+	var url string
+	if post.Type == "diary" {
+		url = fmt.Sprintf("/diary/%d", postID)
+	} else {
+		url = fmt.Sprintf("/learn/%d", postID)
+	}
+	messageService.SendSystemMessage(post.UserID, fmt.Sprintf("获得 20 经验值：帖子《%s》被设为精华", post.Title), url)
 	return
 }
 

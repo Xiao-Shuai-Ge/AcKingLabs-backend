@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"tgwp/cmd/flags"
 	"tgwp/global"
+	"tgwp/internal/utils/messageService"
 	"tgwp/utils"
 )
 
@@ -39,6 +40,9 @@ func Init() {
 
 	// 初始化ElasticSearch
 	InitElasticsearch()
+
+	// 启动消息服务
+	messageService.GetMessageService().Start()
 
 	// 对命令行参数进行处理
 	flags.Run()
