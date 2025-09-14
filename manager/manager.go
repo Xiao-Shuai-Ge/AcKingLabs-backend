@@ -1,9 +1,10 @@
 package manager
 
 import (
+	"tgwp/middleware"
+
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
-	"tgwp/middleware"
 )
 
 //主要管理路由组和中间件的注册
@@ -23,6 +24,7 @@ type RouteManager struct {
 	PostRoutes    *gin.RouterGroup
 	FileRoutes    *gin.RouterGroup
 	ContestRoutes *gin.RouterGroup
+	ResumeRoutes  *gin.RouterGroup // 简历相关的路由组
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -35,6 +37,7 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		PostRoutes:    router.Group("/api/post"),
 		FileRoutes:    router.Group("/api/file"),
 		ContestRoutes: router.Group("/api/contest"),
+		ResumeRoutes:  router.Group("/api/resume"), // 简历相关的路由组
 	}
 }
 
@@ -69,6 +72,10 @@ func (rm *RouteManager) RegisterContestRoutes(handler PathHandler) {
 	handler(rm.ContestRoutes)
 }
 
+func (rm *RouteManager) RegisterResumeRoutes(handler PathHandler) {
+	handler(rm.ResumeRoutes)
+}
+
 // RegisterMiddleware 根据组名为对应的路由组注册中间件
 // group 参数为 "login"、"profile"、"team"或"Common"，分别对应不同的路由组
 func (rm *RouteManager) RegisterMiddleware(group string, middleware Middleware) {
@@ -87,6 +94,8 @@ func (rm *RouteManager) RegisterMiddleware(group string, middleware Middleware) 
 		rm.FileRoutes.Use(middleware())
 	case "contest":
 		rm.ContestRoutes.Use(middleware())
+	case "resume":
+		rm.ResumeRoutes.Use(middleware())
 	}
 }
 

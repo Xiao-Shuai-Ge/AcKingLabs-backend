@@ -44,6 +44,7 @@ func migrateTables() {
 		&model.Contest{},
 		&model.Booking{},
 		&model.AutoSignin{},
+		&model.Resume{},
 	)
 	if err != nil {
 		fmt.Println("数据库迁移失败！")

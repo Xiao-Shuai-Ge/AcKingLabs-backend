@@ -3,9 +3,10 @@ package email
 import (
 	"crypto/tls"
 	"fmt"
-	"gopkg.in/gomail.v2"
 	"tgwp/global"
 	"tgwp/log/zlog"
+
+	"gopkg.in/gomail.v2"
 )
 
 // Send 发送邮件
@@ -66,4 +67,17 @@ func AutoSignin(to string, name string) error {
 </div>
 	`
 	return Send([]string{to}, "[AcKing学习分享平台] [自动签到]", fmt.Sprintf(message, name))
+}
+
+// SendInvitationCodeEmail 发送邀请码邮件
+func SendInvitationCodeEmail(to string, code string) error {
+	message := `
+	<div>
+		<p style="text-indent:2em;">恭喜！您的简历已通过审核。</p>
+		<p style="text-indent:2em;">您的邀请码为: <strong style="color: #007bff; font-size: 18px;">%s</strong></p>
+		<p style="text-indent:2em;">请使用此邀请码注册账号，邀请码仅限该邮箱使用。</p>
+		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
+	</div>
+	`
+	return Send([]string{to}, "[AcKing学习分享平台] [简历通过通知]", fmt.Sprintf(message, code))
 }

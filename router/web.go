@@ -151,4 +151,21 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		rg.POST("/recommend", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.RecommendContest)
 	})
+
+	// 注册简历相关路由组
+	routeManager.RegisterResumeRoutes(func(rg *gin.RouterGroup) {
+		// 投递简历（无需认证）
+		rg.POST("/submit", middleware.Limiter(rate.Every(time.Minute)*5, 2), api.SubmitResume)
+
+		// 修改简历（无需认证，通过邮箱验证码验证）
+		rg.POST("/update", middleware.Limiter(rate.Every(time.Minute)*5, 2), api.UpdateResume)
+
+		// 查询简历详细信息（需要管理员权限或邮箱验证码）
+		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetResumeDetail)
+
+		// 管理员功能
+		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeList)
+		rg.DELETE("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
+		rg.POST("/accept", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AcceptResume)
+	})
 }
