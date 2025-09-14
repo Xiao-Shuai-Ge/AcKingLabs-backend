@@ -79,3 +79,39 @@ type GetRankingsResp struct {
 	Length    int       `json:"length"`
 	PageTotal int64     `json:"page_total"`
 }
+
+// 删除用户请求
+type DeleteUserReq struct {
+	ID string `json:"id"`
+}
+
+// 删除用户响应
+type DeleteUserResp struct {
+}
+
+// 获取用户列表请求（按ID排序分页）
+type GetUserListReq struct {
+	Page  int `form:"page" binding:"required,min=1"`
+	Count int `form:"count" binding:"required,min=1,max=100"`
+}
+
+// 用户列表项
+type UserListItem struct {
+	ID        int64  `json:"id,string"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Avatar    string `json:"avatar"`
+	Xp        int    `json:"xp"`
+	Grade     int    `json:"grade"`
+	RealName  string `json:"real_name"`
+	Role      int    `json:"role"`
+	CreatedAt string `json:"created_at"`
+}
+
+// 获取用户列表响应
+type GetUserListResp struct {
+	Users     []UserListItem `json:"users"`
+	Length    int            `json:"length"`
+	PageTotal int64          `json:"page_total"`
+	Total     int64          `json:"total"`
+}

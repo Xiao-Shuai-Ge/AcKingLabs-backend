@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"tgwp/log/zlog"
 	"tgwp/logic"
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils/jwtUtils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetUserInfo 获取用户基础信息
@@ -87,5 +88,29 @@ func GetRankings(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "获取排行榜请求: %v", req)
 	resp, err := logic.NewUserLogic().GetRankings(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// DeleteUser 删除用户（管理员功能）
+func DeleteUser(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeleteUserReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "删除用户请求: %v", req)
+	resp, err := logic.NewUserLogic().DeleteUser(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// GetUserList 获取用户列表（按ID排序分页，管理员功能）
+func GetUserList(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetUserListReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "获取用户列表请求: %v", req)
+	resp, err := logic.NewUserLogic().GetUserList(ctx, req)
 	response.Response(c, resp, err)
 }

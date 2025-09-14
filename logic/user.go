@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,6 +16,8 @@ import (
 	"tgwp/types"
 	"tgwp/utils"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -326,5 +327,79 @@ func (l *UserLogic) GetRankings(ctx context.Context, req types.GetRankingsReq) (
 	}
 	resp.Length = len(rankings)
 
+	return resp, nil
+}
+
+// DeleteUser 删除用户
+func (l *UserLogic) DeleteUser(ctx context.Context, req types.DeleteUserReq) (resp types.DeleteUserResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	zlog.CtxInfof(ctx, "删除用户请求: %v", req)
+
+	// ID 转化为 int64
+	userID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%s 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 检查用户是否存在
+	_, err = repo.NewUserRepo(global.DB).GetUserProfileByID(userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户不存在: %v", err)
+		return resp, response.ErrResp(err, response.USER_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户信息失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 删除用户
+	err = repo.NewUserRepo(global.DB).DeleteUser(userID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除用户失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "删除用户成功: %d", userID)
+	return resp, nil
+}
+
+// GetUserList 获取用户列表（按ID排序分页）
+func (l *UserLogic) GetUserList(ctx context.Context, req types.GetUserListReq) (resp types.GetUserListResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	zlog.CtxInfof(ctx, "获取用户列表请求: %v", req)
+
+	// 获取用户列表
+	users, total, err := repo.NewUserRepo(global.DB).GetUserList(req.Page, req.Count)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户列表失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 填入参数
+	for _, user := range users {
+		resp.Users = append(resp.Users, types.UserListItem{
+			ID:        user.ID,
+			Username:  user.Username,
+			Email:     user.Email,
+			Avatar:    user.Avatar,
+			Xp:        user.Xp,
+			Grade:     user.Grade,
+			RealName:  user.RealName,
+			Role:      user.Role,
+			CreatedAt: time.UnixMilli(user.CreatedTime).Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	// 计算总页数
+	if int(total)%req.Count == 0 {
+		resp.PageTotal = int64(int(total) / req.Count)
+	} else {
+		resp.PageTotal = int64(int(total)/req.Count + 1)
+	}
+
+	resp.Length = len(users)
+	resp.Total = total
+
+	zlog.CtxInfof(ctx, "获取用户列表成功，共 %d 条记录", len(users))
 	return resp, nil
 }

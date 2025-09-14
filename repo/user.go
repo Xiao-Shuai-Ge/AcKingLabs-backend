@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"gorm.io/gorm"
 	"tgwp/model"
+
+	"gorm.io/gorm"
 )
 
 type UserRepo struct {
@@ -49,6 +50,22 @@ func (r *UserRepo) GetRankings(page int, count int) ([]model.User, int64, error)
 	var users []model.User
 	offset := (page - 1) * count
 	err := r.DB.Model(&model.User{}).Order("xp DESC").Offset(offset).Limit(count).Find(&users).Error
+	var total int64
+	r.DB.Model(&model.User{}).Count(&total)
+	return users, total, err
+}
+
+// DeleteUser 删除用户
+func (r *UserRepo) DeleteUser(id int64) error {
+	err := r.DB.Where("id = ?", id).Delete(&model.User{}).Error
+	return err
+}
+
+// GetUserList 获取用户列表（按ID排序分页）
+func (r *UserRepo) GetUserList(page int, count int) ([]model.User, int64, error) {
+	var users []model.User
+	offset := (page - 1) * count
+	err := r.DB.Model(&model.User{}).Order("id ASC").Offset(offset).Limit(count).Find(&users).Error
 	var total int64
 	r.DB.Model(&model.User{}).Count(&total)
 	return users, total, err

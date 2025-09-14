@@ -95,6 +95,10 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
 
 		rg.GET("/rankings", middleware.Limiter(rate.Every(time.Second)*2, 4), api.GetRankings)
+
+		// 管理员用户管理接口
+		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetUserList)
+		rg.DELETE("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
 	})
 
 	routeManager.RegisterMessageRoutes(func(rg *gin.RouterGroup) {
