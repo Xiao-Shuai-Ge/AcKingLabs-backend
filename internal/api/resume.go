@@ -48,6 +48,20 @@ func GetResumeDetail(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// GetResumeDetailAdmin 查询简历详细信息（管理员功能）
+func GetResumeDetailAdmin(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetResumeDetailReq](c)
+	if err != nil {
+		return
+	}
+	// 获取用户角色
+	userRole := jwtUtils.GetRole(c)
+	zlog.CtxInfof(ctx, "查询简历详细信息请求: %v, 用户角色: %d", req, userRole)
+	resp, err := logic.NewResumeLogic().GetResumeDetail(ctx, req, userRole)
+	response.Response(c, resp, err)
+}
+
 // GetResumeList 获取简历列表（管理员功能）
 func GetResumeList(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)

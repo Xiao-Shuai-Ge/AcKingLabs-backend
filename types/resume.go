@@ -32,16 +32,19 @@ type UpdateResumeResp struct {
 
 // 查询简历详细信息请求
 type GetResumeDetailReq struct {
-	ID string `form:"id" binding:"required"`
+	ID    string `form:"id" binding:"required"`
+	Email string `form:"email" binding:"required,email"`
+	Code  string `form:"code" binding:"required,len=6"` // 邮箱验证码
 }
 
 // 查询简历详细信息响应
 type GetResumeDetailResp struct {
-	ID         int64             `json:"id,string"`
-	RealName   string            `json:"real_name"`
-	Grade      int               `json:"grade"`
-	StudentNo  string            `json:"student_no"`
-	Email      string            `json:"email"`
+	ID        int64  `json:"id,string"`
+	RealName  string `json:"real_name"`
+	Grade     int    `json:"grade"`
+	StudentNo string `json:"student_no"`
+	Email     string `json:"email"`
+	// 包含 information 个人介绍、skills 专业能力、reason 为什么要加入实验室、understanding 对竞赛的理解、future_plan 未来计划
 	Extra      map[string]string `json:"extra"`
 	Code       string            `json:"code"`
 	IsAccepted bool              `json:"is_accepted"`

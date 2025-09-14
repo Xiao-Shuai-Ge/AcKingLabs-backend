@@ -11,7 +11,7 @@ type Resume struct {
 	Email string `json:"email" gorm:"column:email;type:varchar(255);uniqueIndex"`
 
 	// 包含 information 个人介绍、skills 专业能力、reason 为什么要加入实验室、understanding 对竞赛的理解、future_plan 未来计划
-	Extra map[string]string `json:"extra" gorm:"column:extra;type:json;comment:额外信息"`
+	Extra string `json:"extra" gorm:"column:extra;type:json;comment:额外信息"`
 
 	// 通过后自动生成邀请码，只能用于投递的邮箱注册账号
 	Code       string `json:"code" gorm:"column:code;type:varchar(255);comment:邀请码"`

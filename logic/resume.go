@@ -15,6 +15,8 @@ import (
 	"tgwp/types"
 	"tgwp/utils"
 	"tgwp/utils/email"
+	"tgwp/utils/jsonUtils"
+	"tgwp/utils/snowflake"
 	"time"
 
 	"gorm.io/gorm"
@@ -51,13 +53,17 @@ func (l *ResumeLogic) SubmitResume(ctx context.Context, req types.SubmitResumeRe
 		return resp, err
 	}
 
+	// 生成雪花ID
+	id := snowflake.GetIntId(global.Node)
+
 	// 创建简历
 	resume := model.Resume{
+		ID:         id,
 		RealName:   strings.TrimSpace(req.RealName),
 		Grade:      req.Grade,
 		StudentNo:  strings.TrimSpace(req.StudentNo),
 		Email:      strings.TrimSpace(req.Email),
-		Extra:      req.Extra,
+		Extra:      jsonUtils.MapToJson(req.Extra),
 		IsAccepted: false,
 	}
 
@@ -124,7 +130,7 @@ func (l *ResumeLogic) UpdateResume(ctx context.Context, req types.UpdateResumeRe
 	resume.Grade = req.Grade
 	resume.StudentNo = strings.TrimSpace(req.StudentNo)
 	resume.Email = strings.TrimSpace(req.Email)
-	resume.Extra = req.Extra
+	resume.Extra = jsonUtils.MapToJson(req.Extra)
 
 	err = repo.NewResumeRepo(global.DB).UpdateResume(resume)
 	if err != nil {
@@ -141,15 +147,36 @@ func (l *ResumeLogic) GetResumeDetail(ctx context.Context, req types.GetResumeDe
 	defer utils.CtxRecordTime(ctx, time.Now())()
 	zlog.CtxInfof(ctx, "查询简历详细信息请求: %v", req)
 
-	// ID 转化为 int64
-	resumeID, err := strconv.ParseInt(req.ID, 10, 64)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "%s 转换 int64 错误: %v", req.ID, err)
-		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	var resume model.Resume
+	if req.ID == "" || req.ID == "0" {
+		// 验证邮箱验证码
+		if req.Email == "" {
+			zlog.CtxErrorf(ctx, "邮箱不能为空")
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		if l.verifyEmailCode(ctx, req.Email, req.Code) != nil {
+			zlog.CtxErrorf(ctx, "邮箱验证码错误或过期")
+			return resp, response.ErrResp(err, response.VERIFY_CODE_VALID)
+		}
+
+		// 获取简历
+		resume, err = repo.NewResumeRepo(global.DB).GetResumeByEmail(req.Email)
+	} else {
+		if userRole < 3 {
+			zlog.CtxErrorf(ctx, "权限不足，需要管理员权限")
+			return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+		}
+		// ID 转化为 int64
+		var resumeID int64
+		resumeID, err = strconv.ParseInt(req.ID, 10, 64)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "%s 转换 int64 错误: %v", req.ID, err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		// 获取简历
+		resume, err = repo.NewResumeRepo(global.DB).GetResumeByID(resumeID)
 	}
 
-	// 获取简历
-	resume, err := repo.NewResumeRepo(global.DB).GetResumeByID(resumeID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		zlog.CtxErrorf(ctx, "简历不存在: %v", err)
 		return resp, response.ErrResp(err, response.RESUME_NOT_EXIST)
@@ -158,27 +185,19 @@ func (l *ResumeLogic) GetResumeDetail(ctx context.Context, req types.GetResumeDe
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 
-	// 如果非管理员，需要有邮箱验证码才能通过
-	if userRole < 3 {
-		if l.verifyEmailCode(ctx, resume.Email, resume.Code) != nil {
-			zlog.CtxErrorf(ctx, "权限不足，需要管理员权限")
-			return resp, response.ErrResp(err, response.PERMISSION_DENIED)
-		}
-	}
-
 	// 填入响应数据
 	resp.ID = resume.ID
 	resp.RealName = resume.RealName
 	resp.Grade = resume.Grade
 	resp.StudentNo = resume.StudentNo
 	resp.Email = resume.Email
-	resp.Extra = resume.Extra
+	resp.Extra = jsonUtils.JsonToMap(resume.Extra)
 	resp.Code = resume.Code
 	resp.IsAccepted = resume.IsAccepted
 	resp.CreatedAt = time.UnixMilli(resume.CreatedTime).Format("2006-01-02 15:04:05")
 	resp.UpdatedAt = time.UnixMilli(resume.UpdatedTime).Format("2006-01-02 15:04:05")
 
-	zlog.CtxInfof(ctx, "查询简历详细信息成功: %d", resumeID)
+	zlog.CtxInfof(ctx, "查询简历详细信息成功: %d", resume.ID)
 	return resp, nil
 }
 

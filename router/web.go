@@ -98,7 +98,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		// 管理员用户管理接口
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetUserList)
-		rg.DELETE("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
+		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
 	})
 
 	routeManager.RegisterMessageRoutes(func(rg *gin.RouterGroup) {
@@ -162,10 +162,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		// 查询简历详细信息（需要管理员权限或邮箱验证码）
 		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetResumeDetail)
+		rg.GET("/detail-admin", middleware.Limiter(rate.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeDetailAdmin)
 
 		// 管理员功能
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeList)
-		rg.DELETE("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
+		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
 		rg.POST("/accept", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AcceptResume)
 	})
 }
