@@ -59,6 +59,7 @@ func (l *ResumeLogic) SubmitResume(ctx context.Context, req types.SubmitResumeRe
 	// 创建简历
 	resume := model.Resume{
 		ID:         id,
+		Avatar:     strings.TrimSpace(req.Avatar),
 		RealName:   strings.TrimSpace(req.RealName),
 		Grade:      req.Grade,
 		StudentNo:  strings.TrimSpace(req.StudentNo),
@@ -126,6 +127,7 @@ func (l *ResumeLogic) UpdateResume(ctx context.Context, req types.UpdateResumeRe
 	}
 
 	// 更新简历信息
+	resume.Avatar = strings.TrimSpace(req.Avatar)
 	resume.RealName = strings.TrimSpace(req.RealName)
 	resume.Grade = req.Grade
 	resume.StudentNo = strings.TrimSpace(req.StudentNo)
@@ -187,6 +189,7 @@ func (l *ResumeLogic) GetResumeDetail(ctx context.Context, req types.GetResumeDe
 
 	// 填入响应数据
 	resp.ID = resume.ID
+	resp.Avatar = resume.Avatar
 	resp.RealName = resume.RealName
 	resp.Grade = resume.Grade
 	resp.StudentNo = resume.StudentNo
@@ -217,6 +220,7 @@ func (l *ResumeLogic) GetResumeList(ctx context.Context, req types.GetResumeList
 	for _, resume := range resumes {
 		resp.Resumes = append(resp.Resumes, types.ResumeListItem{
 			ID:         resume.ID,
+			Avatar:     resume.Avatar,
 			RealName:   resume.RealName,
 			Grade:      resume.Grade,
 			StudentNo:  resume.StudentNo,

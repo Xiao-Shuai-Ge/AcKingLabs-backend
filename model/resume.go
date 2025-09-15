@@ -4,6 +4,8 @@ type Resume struct {
 	ID int64 `json:"id" gorm:"column:id;primaryKey;type:bigint;type:bigint"`
 	TimeModel
 
+	Avatar string `json:"avatar" gorm:"column:avatar;type:varchar(512);comment:头像"`
+
 	RealName  string `json:"real_name" gorm:"column:real_name;type:varchar(255);"`
 	Grade     int    `json:"grade" gorm:"column:grade;type:int;comment:年级"`
 	StudentNo string `json:"student_no" gorm:"column:student_no;type:varchar(255);comment:学号"`

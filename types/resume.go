@@ -2,6 +2,7 @@ package types
 
 // 投递简历请求
 type SubmitResumeReq struct {
+	Avatar    string            `json:"avatar" binding:"required,url"`
 	RealName  string            `json:"real_name" binding:"required,min=2,max=20"`
 	Grade     int               `json:"grade" binding:"required,min=0,max=99"`
 	StudentNo string            `json:"student_no" binding:"required,min=1,max=30"`
@@ -18,6 +19,7 @@ type SubmitResumeResp struct {
 // 修改简历请求
 type UpdateResumeReq struct {
 	ID        string            `json:"id" binding:"required"`
+	Avatar    string            `json:"avatar" binding:"required,url"`
 	RealName  string            `json:"real_name" binding:"required,min=2,max=20"`
 	Grade     int               `json:"grade" binding:"required,min=0,max=99"`
 	StudentNo string            `json:"student_no" binding:"required,min=1,max=30"`
@@ -40,6 +42,7 @@ type GetResumeDetailReq struct {
 // 查询简历详细信息响应
 type GetResumeDetailResp struct {
 	ID        int64  `json:"id,string"`
+	Avatar    string `json:"avatar"`
 	RealName  string `json:"real_name"`
 	Grade     int    `json:"grade"`
 	StudentNo string `json:"student_no"`
@@ -61,6 +64,7 @@ type GetResumeListReq struct {
 // 简历列表项
 type ResumeListItem struct {
 	ID         int64  `json:"id,string"`
+	Avatar     string `json:"avatar"`
 	RealName   string `json:"real_name"`
 	Grade      int    `json:"grade"`
 	StudentNo  string `json:"student_no"`
