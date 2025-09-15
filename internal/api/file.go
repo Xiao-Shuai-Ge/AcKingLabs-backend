@@ -5,8 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/gin-gonic/gin"
 	"io"
 	"mime"
 	"net/http"
@@ -15,6 +13,9 @@ import (
 	"tgwp/log/zlog"
 	"tgwp/response"
 	"tgwp/types"
+
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/gin-gonic/gin"
 )
 
 // UploadFile 上传文件,因为比较难以分类，所以只在API中实现

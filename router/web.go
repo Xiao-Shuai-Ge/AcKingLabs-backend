@@ -72,7 +72,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	// 注册文件上传相关路由组
 	routeManager.RegisterFileRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/upload", middleware.Limiter(rate.Every(time.Minute)*3, 5), middleware.Authentication(global.ROLE_GUEST), api.UploadFile)
+		rg.POST("/upload", middleware.Limiter(rate.Every(time.Minute)*3, 5), api.UploadFile)
 	})
 
 	// 注册登录相关路由组
