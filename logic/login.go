@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	regexp "github.com/dlclark/regexp2"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"math/rand"
 	"strconv"
 	"tgwp/global"
@@ -19,6 +16,10 @@ import (
 	"tgwp/utils/email"
 	"tgwp/utils/jwtUtils"
 	"time"
+
+	regexp "github.com/dlclark/regexp2"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type LoginLogic struct {
@@ -62,6 +63,9 @@ func (l *LoginLogic) SendCode(ctx context.Context, req types.SendCodeReq) (resp 
 // Register 注册
 func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp types.RegisterResp, err error) {
 	defer utils.CtxRecordTime(ctx, time.Now())()
+	// 定义用户
+	user := model.User{}
+	user.Role = 0
 	// 验证用户名格式
 	if len(req.Username) > 30 {
 		zlog.CtxInfof(ctx, "用户名格式错误: %v", err)
@@ -91,12 +95,25 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 	}
 	// 按照内部邀请码
 	if req.InvitationCode != global.Config.Invitation.Code {
-		zlog.CtxInfof(ctx, "邀请码错误: %v", err)
-		return resp, response.ErrResp(err, response.INVITATION_CODE_VALID)
+		// 判断是否为专属验证码
+		resume, err := repo.NewResumeRepo(global.DB).GetResumeByEmail(req.Email)
+		if err != nil {
+			zlog.CtxInfof(ctx, "获取简历失败: %v", err)
+			return resp, response.ErrResp(err, response.INVITATION_CODE_VALID)
+		}
+		if resume.Code != req.InvitationCode {
+			zlog.CtxInfof(ctx, "邀请码错误: %v", err)
+			return resp, response.ErrResp(err, response.INVITATION_CODE_VALID)
+		}
+		// 否则，信息采用简历信息
+		user.RealName = resume.RealName
+		user.Grade = resume.Grade
+		user.StudentNo = resume.StudentNo
+		user.Email = resume.Email
+		user.Role = 1
 	}
 	// 查询用户
-	var user model.User
-	user, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)
+	_, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		zlog.CtxErrorf(ctx, "邮箱已经被注册!: %v", err)
 		return resp, response.ErrResp(err, response.USER_ALREADY_EXIST)
@@ -111,13 +128,11 @@ func (l *LoginLogic) Register(ctx context.Context, req types.RegisterReq) (resp 
 	}
 	// 创建用户
 	id := global.SnowflakeNode.Generate().Int64()
-	user = model.User{
-		ID:       id,
-		Username: req.Username,
-		Password: string(HashPassword),
-		Email:    req.Email,
-		Role:     0,
-	}
+	user.ID = id
+	user.Username = req.Username
+	user.Password = string(HashPassword)
+	user.Email = req.Email
+
 	// 放入数据库
 	err = repo.NewLoginRepo(global.DB).AddUser(user)
 	if err != nil {
