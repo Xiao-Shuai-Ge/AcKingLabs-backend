@@ -238,10 +238,15 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 	// 更新用户信息
 	user.Username = req.Username
 	user.Avatar = req.Avatar
-	user.Grade = req.Grade
-	user.StudentNo = req.StudentNo
-	user.RealName = req.RealName
 	user.CodeforcesID = req.CodeforcesID
+
+	// 实名信息必须由管理员修改
+	if req.OperatorRole >= global.ROLE_ADMIN {
+		user.Grade = req.Grade
+		user.StudentNo = req.StudentNo
+		user.RealName = req.RealName
+	}
+
 	// 如果用户的身份是游客，那么这次提交将升级为普通用户
 	if user.Role == 0 {
 		user.Role = 1
