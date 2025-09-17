@@ -50,6 +50,11 @@ func Init() {
 	// 测试AI聊天
 	//logic.AiChat()
 
+	// 测试发送邮箱
+	// email.Send([]string{"1019513201@qq.com"}, "测试", "测试")
+	// email.SendWithImage([]string{"1019513201@qq.com"}, "测试", "测试", "static/images/qr-code.png")
+	// email.SendInvitationCodeEmail("1019513201@qq.com", "ABCDEF")
+
 }
 
 func InitPath() {

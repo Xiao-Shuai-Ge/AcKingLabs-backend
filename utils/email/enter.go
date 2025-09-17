@@ -40,6 +40,38 @@ func Send(to []string, subject string, message string) error {
 	return nil
 }
 
+// SendWithImage 发送带图片的邮件
+func SendWithImage(to []string, subject string, message string, imagePath string) error {
+	// 1. 连接SMTP服务器
+	host := global.Config.Email.Host
+	port := global.Config.Email.Port
+	userName := global.Config.Email.UserName
+	password := global.Config.Email.Password
+
+	// 2. 构建邮件对象
+	m := gomail.NewMessage()
+	m.SetHeader("From", userName)   // 发件人
+	m.SetHeader("To", to...)        // 收件人
+	m.SetHeader("Subject", subject) // 主题
+	m.SetBody("text/html", message) // 正文
+	m.Embed(imagePath)
+
+	d := gomail.NewDialer(
+		host,
+		port,
+		userName,
+		password,
+	)
+	// 关闭SSL协议认证
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	if err := d.DialAndSend(m); err != nil {
+		zlog.Errorf("邮件发送失败：%v", err)
+		return err
+	}
+	return nil
+}
+
 // SendCode 发送验证码
 func SendCode(to string, code int64) error {
 	message := `
@@ -76,8 +108,12 @@ func SendInvitationCodeEmail(to string, code string) error {
 		<p style="text-indent:2em;">恭喜！您的简历已通过审核。</p>
 		<p style="text-indent:2em;">您的邀请码为: <strong style="color: #007bff; font-size: 18px;">%s</strong></p>
 		<p style="text-indent:2em;">请使用此邀请码注册账号，邀请码仅限该邮箱使用。</p>
+		<br>
+		<p style="text-indent:2em;">请扫描下方二维码加入群聊：</p>
+		<img src="cid:qr-code.png" alt="群聊二维码" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
+		<br>
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
 	</div>
 	`
-	return Send([]string{to}, "[AcKing学习分享平台] [简历通过通知]", fmt.Sprintf(message, code))
+	return SendWithImage([]string{to}, "[AcKing学习分享平台] [简历通过通知]", fmt.Sprintf(message, code), "static/images/qr-code.png")
 }
