@@ -122,8 +122,9 @@ func SendInvitationCodeEmail(to string, code string) error {
 func SendRejectionEmail(to string) error {
 	message := `
 	<div>
-		<p style="text-indent:2em;">很抱歉，您的简历未通过审核。</p>
-		<p style="text-indent:2em;">感谢您对AcKing学习分享平台的关注，欢迎您继续关注我们的其他活动。</p>
+		<p style="text-indent:2em;">经过实验室评审团队的综合评估，很遗憾地通知您，您的简历未通过审核。</p>
+		<p style="text-indent:2em;">非常感谢你对AcKing算法竞赛实验室的关注与认可，以及在面试过程中展现出的热情和准备🌹🌹🌹</p>
+		<p style="text-indent:2em;">欢迎您继续关注我们的其他活动，祝你在算法学习之路上收获更多进步！👍🏻👍🏻👍🏻</p>
 		<br>
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
 	</div>
