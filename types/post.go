@@ -1,7 +1,8 @@
 package types
 
 type CreatePostReq struct {
-	UserID string `json:"-"`
+	UserID   string `json:"-"`
+	UserRole int    `json:"-"`
 
 	Title   string `json:"title"`
 	Content string `json:"content"`
