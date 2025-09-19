@@ -109,7 +109,7 @@ func SendInvitationCodeEmail(to string, code string) error {
 		<p style="text-indent:2em;">您的邀请码为: <strong style="color: #007bff; font-size: 18px;">%s</strong></p>
 		<p style="text-indent:2em;">请使用此邀请码注册账号，邀请码仅限该邮箱使用。</p>
 		<br>
-		<p style="text-indent:2em;">请扫描下方二维码加入群聊：</p>
+		<p style="text-indent:2em;">请扫描下方二维码加入训练群聊：</p>
 		<img src="cid:qr-code.png" alt="群聊二维码" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
 		<br>
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
@@ -138,7 +138,7 @@ func SendPendingResumeEmail(to string) error {
 	<div>
 		<p style="text-indent:2em;">恭喜！您的简历已通过审核！等待进入下一轮考核！</p>
 		<br>
-		<p style="text-indent:2em;">请尽快扫描下方二维码加入群聊，等待考核通知：</p>
+		<p style="text-indent:2em;">请尽快扫描下方二维码加入考核通知群聊，等待考核通知：</p>
 		<img src="cid:qr-code.png" alt="群聊二维码" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
 		<br>
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
