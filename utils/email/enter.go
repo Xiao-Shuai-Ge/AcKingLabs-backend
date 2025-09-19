@@ -144,5 +144,5 @@ func SendPendingResumeEmail(to string) error {
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
 	</div>
 	`
-	return SendWithImage([]string{to}, "[AcKing学习分享平台] [简历待考核通知]", message, "static/images/qr-code.png")
+	return SendWithImage([]string{to}, "[AcKing学习分享平台] [待考核通知]", message, "static/images/qr-code.png")
 }
