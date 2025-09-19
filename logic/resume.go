@@ -120,6 +120,12 @@ func (l *ResumeLogic) UpdateResume(ctx context.Context, req types.UpdateResumeRe
 		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
 
+	// 已通过、待考核、拒绝的简历不能修改
+	if resume.Status != 0 {
+		zlog.CtxErrorf(ctx, "已通过、待考核、拒绝的简历不能修改")
+		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
+	}
+
 	// 验证额外信息字段
 	err = l.validateExtraFields(req.Extra)
 	if err != nil {
