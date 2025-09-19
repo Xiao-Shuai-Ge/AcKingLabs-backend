@@ -97,3 +97,15 @@ func AcceptResume(c *gin.Context) {
 	resp, err := logic.NewResumeLogic().AcceptResume(ctx, req)
 	response.Response(c, resp, err)
 }
+
+// RejectResume 不通过简历（管理员功能）
+func RejectResume(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.RejectResumeReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "不通过简历请求: %v", req)
+	resp, err := logic.NewResumeLogic().RejectResume(ctx, req)
+	response.Response(c, resp, err)
+}

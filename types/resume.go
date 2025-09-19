@@ -48,11 +48,11 @@ type GetResumeDetailResp struct {
 	StudentNo string `json:"student_no"`
 	Email     string `json:"email"`
 	// 包含 information 个人介绍、skills 专业能力、reason 为什么要加入实验室、understanding 对竞赛的理解、future_plan 未来计划
-	Extra      map[string]string `json:"extra"`
-	Code       string            `json:"code"`
-	IsAccepted bool              `json:"is_accepted"`
-	CreatedAt  string            `json:"created_at"`
-	UpdatedAt  string            `json:"updated_at"`
+	Extra     map[string]string `json:"extra"`
+	Code      string            `json:"code"`
+	Status    int               `json:"status"`
+	CreatedAt string            `json:"created_at"`
+	UpdatedAt string            `json:"updated_at"`
 }
 
 // 获取简历列表请求（管理员功能）
@@ -63,15 +63,15 @@ type GetResumeListReq struct {
 
 // 简历列表项
 type ResumeListItem struct {
-	ID         int64  `json:"id,string"`
-	Avatar     string `json:"avatar"`
-	RealName   string `json:"real_name"`
-	Grade      int    `json:"grade"`
-	StudentNo  string `json:"student_no"`
-	Email      string `json:"email"`
-	IsAccepted bool   `json:"is_accepted"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID        int64  `json:"id,string"`
+	Avatar    string `json:"avatar"`
+	RealName  string `json:"real_name"`
+	Grade     int    `json:"grade"`
+	StudentNo string `json:"student_no"`
+	Email     string `json:"email"`
+	Status    int    `json:"status"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // 获取简历列表响应
@@ -99,4 +99,13 @@ type AcceptResumeReq struct {
 // 通过简历响应
 type AcceptResumeResp struct {
 	Code string `json:"code"` // 生成的邀请码
+}
+
+// 不通过简历请求
+type RejectResumeReq struct {
+	ID string `json:"id" binding:"required"`
+}
+
+// 不通过简历响应
+type RejectResumeResp struct {
 }

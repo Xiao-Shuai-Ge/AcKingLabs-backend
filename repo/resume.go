@@ -61,8 +61,16 @@ func (r *ResumeRepo) GetResumeList(page int, count int) ([]model.Resume, int64, 
 // AcceptResume 通过简历（设置邀请码和通过状态）
 func (r *ResumeRepo) AcceptResume(id int64, code string) error {
 	err := r.DB.Model(&model.Resume{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"code":        code,
-		"is_accepted": true,
+		"code":   code,
+		"status": 1, // 1表示已通过
+	}).Error
+	return err
+}
+
+// RejectResume 不通过简历（设置不通过状态）
+func (r *ResumeRepo) RejectResume(id int64) error {
+	err := r.DB.Model(&model.Resume{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status": -1, // -1表示未通过
 	}).Error
 	return err
 }

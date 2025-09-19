@@ -170,5 +170,6 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeList)
 		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
 		rg.POST("/accept", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AcceptResume)
+		rg.POST("/reject", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.RejectResume)
 	})
 }

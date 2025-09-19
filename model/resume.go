@@ -16,6 +16,6 @@ type Resume struct {
 	Extra string `json:"extra" gorm:"column:extra;type:json;comment:额外信息"`
 
 	// 通过后自动生成邀请码，只能用于投递的邮箱注册账号
-	Code       string `json:"code" gorm:"column:code;type:varchar(255);comment:邀请码"`
-	IsAccepted bool   `json:"is_accepted" gorm:"column:is_accepted;type:bool;comment:是否已通过"`
+	Code   string `json:"code" gorm:"column:code;type:varchar(255);comment:邀请码"`
+	Status int    `json:"status" gorm:"column:status;type:int;comment:状态:0-未处理,1-已通过,-1-未通过"`
 }

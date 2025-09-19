@@ -58,14 +58,14 @@ func (l *ResumeLogic) SubmitResume(ctx context.Context, req types.SubmitResumeRe
 
 	// 创建简历
 	resume := model.Resume{
-		ID:         id,
-		Avatar:     strings.TrimSpace(req.Avatar),
-		RealName:   strings.TrimSpace(req.RealName),
-		Grade:      req.Grade,
-		StudentNo:  strings.TrimSpace(req.StudentNo),
-		Email:      strings.TrimSpace(req.Email),
-		Extra:      jsonUtils.MapToJson(req.Extra),
-		IsAccepted: false,
+		ID:        id,
+		Avatar:    strings.TrimSpace(req.Avatar),
+		RealName:  strings.TrimSpace(req.RealName),
+		Grade:     req.Grade,
+		StudentNo: strings.TrimSpace(req.StudentNo),
+		Email:     strings.TrimSpace(req.Email),
+		Extra:     jsonUtils.MapToJson(req.Extra),
+		Status:    0, // 0表示未处理
 	}
 
 	err = repo.NewResumeRepo(global.DB).CreateResume(resume)
@@ -196,7 +196,7 @@ func (l *ResumeLogic) GetResumeDetail(ctx context.Context, req types.GetResumeDe
 	resp.Email = resume.Email
 	resp.Extra = jsonUtils.JsonToMap(resume.Extra)
 	resp.Code = resume.Code
-	resp.IsAccepted = resume.IsAccepted
+	resp.Status = resume.Status
 	resp.CreatedAt = time.UnixMilli(resume.CreatedTime).Format("2006-01-02 15:04:05")
 	resp.UpdatedAt = time.UnixMilli(resume.UpdatedTime).Format("2006-01-02 15:04:05")
 
@@ -219,15 +219,15 @@ func (l *ResumeLogic) GetResumeList(ctx context.Context, req types.GetResumeList
 	// 填入参数
 	for _, resume := range resumes {
 		resp.Resumes = append(resp.Resumes, types.ResumeListItem{
-			ID:         resume.ID,
-			Avatar:     resume.Avatar,
-			RealName:   resume.RealName,
-			Grade:      resume.Grade,
-			StudentNo:  resume.StudentNo,
-			Email:      resume.Email,
-			IsAccepted: resume.IsAccepted,
-			CreatedAt:  time.UnixMilli(resume.CreatedTime).Format("2006-01-02 15:04:05"),
-			UpdatedAt:  time.UnixMilli(resume.UpdatedTime).Format("2006-01-02 15:04:05"),
+			ID:        resume.ID,
+			Avatar:    resume.Avatar,
+			RealName:  resume.RealName,
+			Grade:     resume.Grade,
+			StudentNo: resume.StudentNo,
+			Email:     resume.Email,
+			Status:    resume.Status,
+			CreatedAt: time.UnixMilli(resume.CreatedTime).Format("2006-01-02 15:04:05"),
+			UpdatedAt: time.UnixMilli(resume.UpdatedTime).Format("2006-01-02 15:04:05"),
 		})
 	}
 
@@ -301,7 +301,7 @@ func (l *ResumeLogic) AcceptResume(ctx context.Context, req types.AcceptResumeRe
 	}
 
 	// 检查简历是否已经被通过
-	if resume.IsAccepted {
+	if resume.Status == 1 {
 		zlog.CtxErrorf(ctx, "简历已经被通过: %d", resumeID)
 		return resp, response.ErrResp(err, response.RESUME_ALREADY_ACCEPTED)
 	}
@@ -359,6 +359,52 @@ func (l *ResumeLogic) validateExtraFields(extra map[string]string) error {
 	}
 
 	return nil
+}
+
+// RejectResume 不通过简历（管理员功能）
+func (l *ResumeLogic) RejectResume(ctx context.Context, req types.RejectResumeReq) (resp types.RejectResumeResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	zlog.CtxInfof(ctx, "不通过简历请求: %v", req)
+
+	// ID 转化为 int64
+	resumeID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%s 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 获取简历
+	resume, err := repo.NewResumeRepo(global.DB).GetResumeByID(resumeID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "简历不存在: %v", err)
+		return resp, response.ErrResp(err, response.RESUME_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "获取简历失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 检查简历是否已经被处理过
+	if resume.Status == 1 {
+		zlog.CtxErrorf(ctx, "简历已经被通过，无法拒绝: %d", resumeID)
+		return resp, response.ErrResp(err, response.RESUME_ALREADY_ACCEPTED)
+	}
+
+	// 发送不通过通知邮件
+	err = email.SendRejectionEmail(resume.Email)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "发送不通过通知邮件失败: %v", err)
+		// 邮件发送失败也继续执行不通过流程，记录错误但不中断
+	}
+
+	// 标记简历为不通过
+	err = repo.NewResumeRepo(global.DB).RejectResume(resumeID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "标记简历不通过失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "不通过简历成功: %d", resumeID)
+	return resp, nil
 }
 
 // generateInvitationCode 生成6位随机大写字母邀请码

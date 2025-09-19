@@ -117,3 +117,16 @@ func SendInvitationCodeEmail(to string, code string) error {
 	`
 	return SendWithImage([]string{to}, "[AcKing学习分享平台] [简历通过通知]", fmt.Sprintf(message, code), "static/images/qr-code.png")
 }
+
+// SendRejectionEmail 发送简历不通过通知邮件
+func SendRejectionEmail(to string) error {
+	message := `
+	<div>
+		<p style="text-indent:2em;">很抱歉，您的简历未通过审核。</p>
+		<p style="text-indent:2em;">感谢您对AcKing学习分享平台的关注，欢迎您继续关注我们的其他活动。</p>
+		<br>
+		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
+	</div>
+	`
+	return Send([]string{to}, "[AcKing学习分享平台] [简历审核结果通知]", message)
+}
