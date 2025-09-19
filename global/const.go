@@ -33,6 +33,8 @@ var (
 		"solution": true,
 		"contest":  true,
 		"fun":      true,
+		"official": true,
+		"help":     true,
 	}
 )
 
