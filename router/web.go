@@ -33,6 +33,8 @@ func listen() (*gin.Engine, error) {
 	manager.RequestGlobalMiddleware(r)
 	//配置静态路由，用于访问上传的文件
 	r.Static("/uploads", "uploads")
+	//配置静态路由，用于访问静态资源文件
+	r.Static("/static", "static")
 	// 创建 RouteManager 实例
 	routeManager := manager.NewRouteManager(r)
 	// 注册各业务路由组的具体路由

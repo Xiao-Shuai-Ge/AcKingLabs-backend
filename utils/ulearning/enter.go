@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/levigross/grequests"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"tgwp/global"
 	"tgwp/log/zlog"
+
+	"github.com/levigross/grequests"
 )
 
 type User struct {
@@ -125,7 +126,7 @@ func (l *User) GetAllCourses() (resp GetAllCoursesResp, err error) {
 		zlog.Errorf("解析响应失败: %v", err)
 		return
 	}
-	//zlog.Debugf("课程列表: %v", resp)
+	zlog.Debugf("课程列表: %v", resp)
 	return
 }
 

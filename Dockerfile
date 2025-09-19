@@ -36,6 +36,8 @@ WORKDIR /app
 # 从构建阶段复制产物
 COPY --from=builder /app/acking ./
 COPY --from=builder /app/config.yaml ./
+# 复制静态资源目录
+COPY --from=builder /app/static ./static
 
 # 暴露端口
 EXPOSE 8080
