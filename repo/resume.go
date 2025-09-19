@@ -62,7 +62,15 @@ func (r *ResumeRepo) GetResumeList(page int, count int) ([]model.Resume, int64, 
 func (r *ResumeRepo) AcceptResume(id int64, code string) error {
 	err := r.DB.Model(&model.Resume{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"code":   code,
-		"status": 1, // 1表示已通过
+		"status": 2, // 2表示已通过
+	}).Error
+	return err
+}
+
+// PendingResume 待考核简历（设置待考核状态）
+func (r *ResumeRepo) PendingResume(id int64) error {
+	err := r.DB.Model(&model.Resume{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status": 1, // 1表示待考核
 	}).Error
 	return err
 }

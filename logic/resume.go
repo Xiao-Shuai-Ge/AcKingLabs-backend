@@ -301,7 +301,7 @@ func (l *ResumeLogic) AcceptResume(ctx context.Context, req types.AcceptResumeRe
 	}
 
 	// 检查简历是否已经被通过
-	if resume.Status == 1 {
+	if resume.Status == 2 {
 		zlog.CtxErrorf(ctx, "简历已经被通过: %d", resumeID)
 		return resp, response.ErrResp(err, response.RESUME_ALREADY_ACCEPTED)
 	}
@@ -359,6 +359,46 @@ func (l *ResumeLogic) validateExtraFields(extra map[string]string) error {
 	}
 
 	return nil
+}
+
+// PendingResume 待考核简历（管理员功能）
+func (l *ResumeLogic) PendingResume(ctx context.Context, req types.PendingResumeReq) (resp types.PendingResumeResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	zlog.CtxInfof(ctx, "待考核简历请求: %v", req)
+
+	// ID 转化为 int64
+	resumeID, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "%s 转换 int64 错误: %v", req.ID, err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 获取简历
+	resume, err := repo.NewResumeRepo(global.DB).GetResumeByID(resumeID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "简历不存在: %v", err)
+		return resp, response.ErrResp(err, response.RESUME_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "获取简历失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 发送待考核通知邮件
+	err = email.SendPendingResumeEmail(resume.Email)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "发送待考核通知邮件失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 标记简历为待考核
+	err = repo.NewResumeRepo(global.DB).PendingResume(resumeID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "标记简历待考核失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "待考核简历成功: %d", resumeID)
+	return resp, nil
 }
 
 // RejectResume 不通过简历（管理员功能）

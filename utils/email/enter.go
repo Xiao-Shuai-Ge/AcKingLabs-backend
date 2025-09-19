@@ -131,3 +131,18 @@ func SendRejectionEmail(to string) error {
 	`
 	return Send([]string{to}, "[AcKing学习分享平台] [简历审核结果通知]", message)
 }
+
+// SendPendingResumeEmail 发送待考核通知邮件
+func SendPendingResumeEmail(to string) error {
+	message := `
+	<div>
+		<p style="text-indent:2em;">恭喜！您的简历已通过审核！等待进入下一轮考核！</p>
+		<br>
+		<p style="text-indent:2em;">请尽快扫描下方二维码加入群聊，等待考核通知：</p>
+		<img src="cid:qr-code.png" alt="群聊二维码" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
+		<br>
+		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
+	</div>
+	`
+	return SendWithImage([]string{to}, "[AcKing学习分享平台] [简历待考核通知]", message, "static/images/qr-code.png")
+}

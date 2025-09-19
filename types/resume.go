@@ -101,6 +101,15 @@ type AcceptResumeResp struct {
 	Code string `json:"code"` // 生成的邀请码
 }
 
+// 待考核简历请求
+type PendingResumeReq struct {
+	ID string `json:"id" binding:"required"`
+}
+
+// 待考核简历响应
+type PendingResumeResp struct {
+}
+
 // 不通过简历请求
 type RejectResumeReq struct {
 	ID string `json:"id" binding:"required"`

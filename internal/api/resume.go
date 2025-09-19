@@ -98,6 +98,18 @@ func AcceptResume(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
+// PendingResume 挂起简历（管理员功能）
+func PendingResume(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.PendingResumeReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "待考核简历请求: %v", req)
+	resp, err := logic.NewResumeLogic().PendingResume(ctx, req)
+	response.Response(c, resp, err)
+}
+
 // RejectResume 不通过简历（管理员功能）
 func RejectResume(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
