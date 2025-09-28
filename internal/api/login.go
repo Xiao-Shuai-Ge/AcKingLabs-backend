@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"tgwp/log/zlog"
 	"tgwp/logic"
 	"tgwp/response"
 	"tgwp/types"
 	"tgwp/utils/jwtUtils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // SendCode 发送验证码
@@ -71,5 +72,17 @@ func TokenTest(c *gin.Context) {
 
 	zlog.CtxInfof(ctx, "注册请求: %v", req)
 	resp, err := logic.NewLoginLogic().TokenTest(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// ResetPassword 重置密码
+func ResetPassword(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.ResetPasswordReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "重置密码请求: %v", req)
+	resp, err := logic.NewLoginLogic().ResetPassword(ctx, req)
 	response.Response(c, resp, err)
 }

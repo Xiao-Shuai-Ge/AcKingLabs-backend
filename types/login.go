@@ -45,3 +45,13 @@ type TokenTestReq struct {
 type TokenTestResp struct {
 	Msg string `json:"msg"`
 }
+
+// 找回密码相关类型定义
+type ResetPasswordReq struct {
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
+}
+
+type ResetPasswordResp struct {
+}

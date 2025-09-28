@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"gorm.io/gorm"
 	"tgwp/model"
+
+	"gorm.io/gorm"
 )
 
 type LoginRepo struct {
@@ -25,4 +26,9 @@ func (r *LoginRepo) GetUserByEmail(email string) (model.User, error) {
 	var user model.User
 	err := r.DB.Where("email = ?", email).First(&user).Error
 	return user, err
+}
+
+// UpdatePassword 更新用户密码
+func (r *LoginRepo) UpdatePassword(email string, password string) error {
+	return r.DB.Model(&model.User{}).Where("email = ?", email).Update("password", password).Error
 }

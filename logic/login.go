@@ -228,7 +228,7 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 	}
 	// 生成新的 atoken
 	var atoken string
-	atoken, err = jwtUtils.GenAtoken(fmt.Sprintf("%s", data.Userid), user.Username, user.Role, global.ATOKEN_EFFECTIVE_TIME)
+	atoken, err = jwtUtils.GenAtoken(data.Userid, user.Username, user.Role, global.ATOKEN_EFFECTIVE_TIME)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "生成 atoken 失败: %v", err)
 		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
@@ -241,4 +241,62 @@ func (l *LoginLogic) RefreshToken(ctx context.Context, req types.RefreshTokenReq
 func (l *LoginLogic) TokenTest(ctx context.Context, req types.TokenTestReq) (resp types.TokenTestResp, err error) {
 	resp.Msg = "测试成功"
 	return
+}
+
+// ResetPassword 重置密码
+func (l *LoginLogic) ResetPassword(ctx context.Context, req types.ResetPasswordReq) (resp types.ResetPasswordResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+
+	// 验证邮箱格式
+	re := regexp.MustCompile(EMAIL_REGEX, 0)
+	if isMatch, _ := re.MatchString(req.Email); !isMatch {
+		return resp, response.ErrResp(err, response.EMAIL_NOT_VALID)
+	}
+
+	// 验证密码格式
+	if len(req.Password) > 30 || len(req.Password) < 6 {
+		zlog.CtxInfof(ctx, "密码格式错误: %v", err)
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	// 验证验证码（复用注册验证码的Redis key）
+	code, err := global.Rdb.Get(ctx, fmt.Sprintf(REDIS_EMAIL_CODE, req.Email)).Int()
+	if err != nil {
+		zlog.CtxInfof(ctx, "验证码错误或已过期: %v", err)
+		return resp, response.ErrResp(err, response.VERIFY_CODE_VALID)
+	}
+	if fmt.Sprintf("%06d", code) != req.Code {
+		zlog.CtxInfof(ctx, "验证码错误: %v", err)
+		return resp, response.ErrResp(err, response.VERIFY_CODE_VALID)
+	}
+
+	// 检查用户是否存在
+	_, err = repo.NewLoginRepo(global.DB).GetUserByEmail(req.Email)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		zlog.CtxErrorf(ctx, "用户不存在: %v", err)
+		return resp, response.ErrResp(err, response.USER_NOT_EXIST)
+	} else if err != nil {
+		zlog.CtxErrorf(ctx, "查询用户失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 密码加密
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		zlog.CtxInfof(ctx, "密码加密失败: %v", err)
+		return resp, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+
+	// 更新密码
+	err = repo.NewLoginRepo(global.DB).UpdatePassword(req.Email, string(hashPassword))
+	if err != nil {
+		zlog.CtxErrorf(ctx, "更新密码失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	// 删除验证码
+	global.Rdb.Del(ctx, fmt.Sprintf(REDIS_EMAIL_CODE, req.Email))
+
+	zlog.CtxInfof(ctx, "重置密码成功: %v", req.Email)
+	return resp, nil
 }

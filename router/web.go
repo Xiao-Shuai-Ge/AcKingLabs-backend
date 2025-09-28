@@ -84,6 +84,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Login)
 		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*4, 8), api.RefreshToken)
 
+		// 找回密码相关路由（复用send-code发送验证码）
+		rg.POST("/reset-password", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.ResetPassword)
+
 		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_SUPER_ADMIN), api.TokenTest)
 	})
 
