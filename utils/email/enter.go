@@ -105,12 +105,12 @@ func AutoSignin(to string, name string) error {
 func SendInvitationCodeEmail(to string, code string) error {
 	message := `
 	<div>
-		<p style="text-indent:2em;">恭喜！您的简历已通过审核。</p>
+		<p style="text-indent:2em;">恭喜！您的已获得ACKING内部平台注册资格。</p>
 		<p style="text-indent:2em;">您的邀请码为: <strong style="color: #007bff; font-size: 18px;">%s</strong></p>
 		<p style="text-indent:2em;">请使用此邀请码注册账号，邀请码仅限该邮箱使用。</p>
 		<br>
-		<p style="text-indent:2em;">请扫描下方二维码加入训练群聊：</p>
-		<img src="cid:qr-code.png" alt="群聊二维码" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
+		<p style="text-indent:2em;">可以点击下方链接注册账号：</p>
+		<a href="http://120.79.250.47/login" style="margin: 2px;">http://120.79.250.47/login</a>
 		<br>
 		<p style="text-indent:2em;">如有疑问，请联系管理员。</p>
 	</div>
