@@ -345,6 +345,13 @@ func (r *PostRepo) DeleteCommentByCommentID(comment_id int64, post_id int64) (er
 	}
 	if post_id != 0 {
 		err = r.DB.Model(&model.Post{}).Where("id = ?", post_id).Update("comments", gorm.Expr("comments - ?", 1)).Error
+		if err != nil {
+			return err
+		}
+	}
+	err = cacheUtils.Remove(fmt.Sprintf("cache:post:%d", post_id))
+	if err != nil {
+		return err
 	}
 	//zlog.Debugf("删除评论: %d", comment_id)
 	return
