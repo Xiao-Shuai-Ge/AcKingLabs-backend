@@ -643,6 +643,20 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.OperatorID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	// 获取评论详情
+	var comment model.Comment
+	comment, err = repo.NewPostRepo(global.DB).GetCommentDetail(commentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询评论详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+	// 获取帖子详情
+	var post model.Post
+	post, err = repo.NewPostRepo(global.DB).GetPostDetail(comment.PostID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
 	// 判断是否已经点赞
 	isLike, err := repo.NewPostRepo(global.DB).IsCommentLikeExists(commentID, operatorID)
 	if err != nil {
@@ -675,12 +689,16 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 					zlog.CtxErrorf(ctx, "标记管理员点赞失败: %v", err)
 					return resp, response.ErrResp(err, response.DATABASE_ERROR)
 				}
-				// 增加经验 (合理性有待商榷，暂时取消)
-				//err = repo.NewUserRepo(global.DB).AddUserXp(comment.UserID, 2)
-				//if err != nil {
-				//	zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
-				//	return resp, response.ErrResp(err, response.DATABASE_ERROR)
-				//}
+				// 判断增加经验条件 (帖子为求助帖，且评论为一级评论)
+				if post.Type == "help" && comment.FatherID == 0 {
+					err = repo.NewUserRepo(global.DB).AddUserXp(comment.UserID, 4)
+					if err != nil {
+						zlog.CtxErrorf(ctx, "增加经验失败: %v", err)
+						return resp, response.ErrResp(err, response.DATABASE_ERROR)
+					}
+					// 发送经验增加通知
+					messageService.SendSystemMessage(comment.UserID, fmt.Sprintf("获得 4 经验值：管理员将你的评论标记为优质解答 \"%s\" ", comment.Content), fmt.Sprintf("/learn/%d", post.ID))
+				}
 			}
 		}
 		// 点赞
@@ -709,20 +727,6 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 	if err != nil {
 		zlog.CtxErrorf(ctx, "%v", err)
 		return resp, response.ErrResp(err, response.REDIS_ERROR)
-	}
-	// 获取评论详情
-	var comment model.Comment
-	comment, err = repo.NewPostRepo(global.DB).GetCommentDetail(commentID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "查询评论详情失败: %v", err)
-		return resp, response.ErrResp(err, response.DATABASE_ERROR)
-	}
-	// 获取帖子详情
-	var post model.Post
-	post, err = repo.NewPostRepo(global.DB).GetPostDetail(comment.PostID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "查询帖子详情失败: %v", err)
-		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	// 简化评论内容 (去掉换行符)
 	contentShort := comment.Content
