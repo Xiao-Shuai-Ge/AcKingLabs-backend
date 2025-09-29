@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"tgwp/utils/cacheUtils"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type PostRepo struct {
@@ -89,6 +90,10 @@ func (r *PostRepo) CancelPostLike(post_id int64, user_id int64) (err error) {
 		zlog.Errorf("删除失败: %v", result.Error)
 		return nil
 	}
+	err = cacheUtils.Remove(fmt.Sprintf("cache:post:%d", post_id))
+	if err != nil {
+		return err
+	}
 
 	err = r.DB.Model(&model.Post{}).Where("id = ?", post_id).Update("likes", gorm.Expr("likes - ?", 1)).Error
 	return err
@@ -99,7 +104,10 @@ func (r *PostRepo) AddPostLike(postLike model.PostLike) (err error) {
 	if err != nil {
 		return err
 	}
-
+	err = cacheUtils.Remove(fmt.Sprintf("cache:post:%d", postLike.PostID))
+	if err != nil {
+		return err
+	}
 	err = r.DB.Model(&model.Post{}).Where("id = ?", postLike.PostID).Update("likes", gorm.Expr("likes + ?", 1)).Error
 	if err != nil {
 		return err
@@ -125,6 +133,13 @@ func (r *PostRepo) CreateComment(comment model.Comment) error {
 	}
 	// 更新帖子评论数
 	err = r.DB.Model(&model.Post{}).Where("id = ?", comment.PostID).Update("comments", gorm.Expr("comments + ?", 1)).Error
+	if err != nil {
+		return err
+	}
+	err = cacheUtils.Remove(fmt.Sprintf("cache:post:%d", comment.PostID))
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -314,7 +329,7 @@ func (r *PostRepo) GetAllCommentsByPostID(post_id int64) (comments []model.Comme
 }
 
 func (r *PostRepo) GetAllChildCommentsByCommentID(comment_id int64) (comments []model.Comment, err error) {
-	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Find(&comments).Error
+	err = r.DB.Model(&model.Comment{}).Where("father_id = ?", comment_id).Find(&comments).Error
 	return
 }
 
@@ -323,7 +338,14 @@ func (r *PostRepo) DeleteCommentLikeByCommentID(comment_id int64) (err error) {
 	return
 }
 
-func (r *PostRepo) DeleteCommentByCommentID(comment_id int64) (err error) {
+func (r *PostRepo) DeleteCommentByCommentID(comment_id int64, post_id int64) (err error) {
 	err = r.DB.Model(&model.Comment{}).Where("id = ?", comment_id).Delete(&model.Comment{}).Error
+	if err != nil {
+		return err
+	}
+	if post_id != 0 {
+		err = r.DB.Model(&model.Post{}).Where("id = ?", post_id).Update("comments", gorm.Expr("comments - ?", 1)).Error
+	}
+	//zlog.Debugf("删除评论: %d", comment_id)
 	return
 }

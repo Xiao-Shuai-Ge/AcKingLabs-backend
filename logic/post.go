@@ -250,10 +250,10 @@ func (l *PostLogic) DeletePost(ctx context.Context, req types.DeletePostReq) (re
 				return resp, response.ErrResp(err, response.DATABASE_ERROR)
 			}
 			// 删除子评论
-			err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID)
+			err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID, comment.PostID)
 		}
 		// 删除评论
-		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(comment.ID)
+		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(comment.ID, comment.PostID)
 	}
 	// 删除帖子
 	err = repo.NewPostRepo(global.DB).DeletePost(post)
@@ -492,6 +492,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	contentShort := comment.Content
 	contentShort = strings.ReplaceAll(contentShort, "\n", " ")
 	contentShort = utils.TruncateString(contentShort, 20)
+
 	// 发送通知
 	var url string
 	if post.Type == "diary" {
@@ -575,14 +576,14 @@ func (l *PostLogic) DeleteComment(ctx context.Context, req types.DeleteCommentRe
 			return
 		}
 		// 删除子评论
-		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID)
+		err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(childComment.ID, comment.PostID)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "删除子评论失败: %v", err)
 			return
 		}
 	}
 	// 删除评论
-	err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(commentID)
+	err = repo.NewPostRepo(global.DB).DeleteCommentByCommentID(commentID, comment.PostID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
