@@ -9,10 +9,12 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/response"
 	"tgwp/types"
+	"tgwp/utils/imageUtils"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/gin-gonic/gin"
@@ -42,6 +44,42 @@ func UploadFile(c *gin.Context) {
 		err = response.ErrResp(err, response.INTERNAL_ERROR)
 		response.Response(c, resp, err)
 		return
+	}
+
+	// 验证图片格式（只支持PNG和JPG）
+	err = imageUtils.ValidateImageFormat(header.Filename)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "图片格式验证失败: %v", err)
+		err = response.ErrResp(err, response.PARAM_NOT_VALID)
+		response.Response(c, resp, err)
+		return
+	}
+
+	zlog.CtxDebugf(ctx, "文件大小: %d 字节", len(fileBytes))
+	// 如果文件大小超过1MB，进行压缩
+	const maxSizeBytes = 1024 * 1024 // 1MB
+	if int64(len(fileBytes)) > maxSizeBytes {
+		zlog.CtxInfof(ctx, "文件大小 %d 字节，超过1MB限制，开始压缩", len(fileBytes))
+
+		compressedBytes, convertedToJPG, err := imageUtils.CompressImageWithFormat(fileBytes, header.Filename, maxSizeBytes)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "图片压缩失败: %v", err)
+			err = response.ErrResp(err, response.INTERNAL_ERROR)
+			response.Response(c, resp, err)
+			return
+		}
+
+		fileBytes = compressedBytes
+		zlog.CtxInfof(ctx, "压缩完成，新文件大小: %d 字节", len(fileBytes))
+
+		// 如果PNG转换为JPG，更新文件扩展名
+		if convertedToJPG {
+			ext := filepath.Ext(header.Filename)
+			if strings.ToLower(ext) == ".png" {
+				header.Filename = strings.TrimSuffix(header.Filename, ext) + ".jpg"
+				zlog.CtxInfof(ctx, "PNG已转换为JPG格式，文件名更新为: %s", header.Filename)
+			}
+		}
 	}
 
 	// 计算SHA-256哈希值
