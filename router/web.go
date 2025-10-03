@@ -101,6 +101,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		rg.GET("/rankings", middleware.Limiter(rate.Every(time.Second)*2, 4), api.GetRankings)
 
+		// 用户设置相关路由
+		rg.GET("/setting", middleware.Limiter(rate.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_GUEST), api.GetSetting)
+		rg.POST("/setting", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.UpdateSetting)
+		rg.POST("/setting/reset", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_GUEST), api.ResetSetting)
+
 		// 管理员用户管理接口
 		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetUserList)
 		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
