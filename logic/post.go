@@ -8,6 +8,7 @@ import (
 	"strings"
 	"tgwp/global"
 	"tgwp/internal/utils/messageService"
+	"tgwp/internal/utils/notifyService"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"tgwp/repo"
@@ -101,6 +102,12 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 	resp.ID = id
+
+	// 如果是求助帖，发送通知给开启了求助帖通知的用户
+	if req.Type == "help" {
+		url := fmt.Sprintf("/learn/%d", id)
+		go notifyService.SendHelpPostNotify(ctx, req.Title, url, userID)
+	}
 	// 给作者加 XP
 	addXp := 4
 	if req.IsPrivate == false {
@@ -129,7 +136,7 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 	if req.Type == "diary" {
 		reason = "发布周记"
 	}
-	messageService.SendSystemMessage(userID, fmt.Sprintf("获得 %d 经验值：%s《%s》", addXp, reason, req.Title), url)
+	notifyService.SendSystemMessageNotify(ctx, userID, fmt.Sprintf("获得 %d 经验值：%s《%s》", addXp, reason, req.Title), url)
 
 	return
 }
@@ -362,7 +369,7 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 				} else {
 					url = fmt.Sprintf("/learn/%d", post.ID)
 				}
-				messageService.SendSystemMessage(post.UserID, fmt.Sprintf("获得 5 经验值：管理员点赞帖子《%s》", post.Title), url)
+				notifyService.SendSystemMessageNotify(ctx, post.UserID, fmt.Sprintf("获得 5 经验值：管理员点赞帖子《%s》", post.Title), url)
 			}
 		}
 		// 点赞
@@ -406,7 +413,9 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 	} else {
 		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
-	messageService.SendLikeMessageIfNotSelf(
+	// 使用新的通知服务（站内消息 + 邮件通知）
+	notifyService.SendLikeNotify(
+		ctx,
 		post.UserID,
 		operatorID,
 		fmt.Sprintf("赞了你的帖子 《%s》", post.Title),
@@ -504,7 +513,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 	if fatherID == 0 {
 		// 一级评论：只给帖子作者发送通知
 		content := fmt.Sprintf("在你的帖子 《%s》 评论了: [%s]", post.Title, contentShort)
-		messageService.SendCommentMessageIfNotSelf(post.UserID, userID, content, url)
+		notifyService.SendReplyNotify(ctx, post.UserID, userID, content, url)
 	} else {
 		// 子评论：需要给帖主和评论作者都发送通知
 		var fatherComment model.Comment
@@ -520,12 +529,12 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 
 		// 给评论作者发送通知：你的评论被回复了
 		commentContent := fmt.Sprintf("在你的评论 [%s] 回复了: [%s]", fatherContentShort, contentShort)
-		messageService.SendCommentMessageIfNotSelf(fatherComment.UserID, userID, commentContent, url)
+		notifyService.SendReplyNotify(ctx, fatherComment.UserID, userID, commentContent, url)
 
 		// 给帖子作者发送通知：你的帖子有新回复（如果不是同一个人）
 		if post.UserID != fatherComment.UserID {
 			postContent := fmt.Sprintf("在你的帖子 《%s》 发布子评论: [%s]", post.Title, contentShort)
-			messageService.SendCommentMessageIfNotSelf(post.UserID, userID, postContent, url)
+			notifyService.SendReplyNotify(ctx, post.UserID, userID, postContent, url)
 		}
 	}
 	return
@@ -740,8 +749,9 @@ func (l *PostLogic) LikeComment(ctx context.Context, req types.LikeCommentReq) (
 	} else {
 		url = fmt.Sprintf("/learn/%d", post.ID)
 	}
-	// 使用新的消息服务发送通知
-	messageService.SendLikeMessageIfNotSelf(
+	// 使用新的通知服务发送通知（站内消息 + 邮件通知）
+	notifyService.SendLikeNotify(
+		ctx,
 		comment.UserID,
 		operatorID,
 		fmt.Sprintf("赞了你的评论 [ %s ]", contentShort),
