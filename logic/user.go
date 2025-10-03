@@ -85,6 +85,14 @@ func (l *UserLogic) GetUserProfile(ctx context.Context, req types.GetUserProfile
 	resp.StudentNo = user.StudentNo
 	resp.CodeforcesID = user.CodeforcesID
 	resp.CodeforcesRating = user.CodeforcesRating
+	resp.Signature = user.Signature
+	// 解析获奖经历JSON
+	if user.Awards != "" {
+		var awards []types.Award
+		if err := json.Unmarshal([]byte(user.Awards), &awards); err == nil {
+			resp.Awards = awards
+		}
+	}
 	resp.Role = user.Role
 
 	// 判断需不需要并刷新 codeforces rating
@@ -212,6 +220,36 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 		zlog.CtxErrorf(ctx, "头像 URL 不能为 gif 格式")
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
+	// 7. 个性签名长度不能超过255
+	if len(req.Signature) > 255 {
+		zlog.CtxErrorf(ctx, "个性签名长度不能超过 255")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+	// 8. 验证获奖经历格式
+	// 整体不能超过 1024
+	if len(req.Awards) > 1024 {
+		zlog.CtxErrorf(ctx, "获奖经历长度不能超过 1024")
+		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+	}
+
+	if len(req.Awards) > 0 {
+		for i, award := range req.Awards {
+			// 验证奖项名称不为空且不超过100字符
+			if award.Name == "" {
+				zlog.CtxErrorf(ctx, "第 %d 个奖项名称不能为空", i+1)
+				return resp, response.ErrResp(errors.New("奖项名称不能为空"), response.PARAM_NOT_VALID)
+			}
+			if len(award.Name) > 100 {
+				zlog.CtxErrorf(ctx, "第 %d 个奖项名称长度不能超过 100", i+1)
+				return resp, response.ErrResp(errors.New("奖项名称长度不能超过 100"), response.PARAM_NOT_VALID)
+			}
+			// 验证奖项等级必须是1,2,3
+			if award.Level < 1 || award.Level > 3 {
+				zlog.CtxErrorf(ctx, "第 %d 个奖项等级必须是 1(一等奖)、2(二等奖)或 3(三等奖)", i+1)
+				return resp, response.ErrResp(errors.New("奖项等级必须是 1、2 或 3"), response.PARAM_NOT_VALID)
+			}
+		}
+	}
 
 	// 拿出先前的用户信息
 	user, err := repo.NewUserRepo(global.DB).GetUserProfileByID(userID)
@@ -239,6 +277,19 @@ func (l *UserLogic) SetUserProfile(ctx context.Context, req types.SetUserProfile
 	user.Username = req.Username
 	user.Avatar = req.Avatar
 	user.CodeforcesID = req.CodeforcesID
+	user.Signature = req.Signature
+
+	// 序列化获奖经历为JSON
+	if len(req.Awards) > 0 {
+		awardsJSON, err := json.Marshal(req.Awards)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "序列化获奖经历失败: %v", err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+		user.Awards = string(awardsJSON)
+	} else {
+		user.Awards = "[]"
+	}
 
 	// 实名信息必须由管理员修改
 	if req.OperatorRole >= global.ROLE_ADMIN {

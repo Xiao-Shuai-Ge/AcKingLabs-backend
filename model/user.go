@@ -17,6 +17,9 @@ type User struct {
 	CodeforcesID     string `json:"codeforces_id" gorm:"column:codeforces_id;type:varchar(255);comment:codeforces ID"`
 	CodeforcesRating int    `json:"codeforces_rating" gorm:"column:codeforces_rating;type:int;comment:codeforces 分数"`
 
+	Signature string `json:"signature" gorm:"column:signature;type:varchar(255);comment:个性签名"`
+	Awards    string `json:"awards" gorm:"column:awards;type:text;comment:获奖经历JSON"`
+
 	Role int `json:"role" gorm:"column:role;type:int;comment:权限等级"`
 	// 0: 游客(未实名) 1:普通用户 2.正式成员 3:管理员 4:超级管理员
 }

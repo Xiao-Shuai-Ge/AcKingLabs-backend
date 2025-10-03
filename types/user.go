@@ -29,6 +29,9 @@ type GetUserProfileResp struct {
 	CodeforcesID     string `json:"codeforces_id"`
 	CodeforcesRating int    `json:"codeforces_rating"`
 
+	Signature string  `json:"signature"`
+	Awards    []Award `json:"awards"`
+
 	Role int `json:"role"`
 }
 
@@ -46,6 +49,9 @@ type SetUserProfileReq struct {
 	RealName  string `json:"real_name"`
 
 	CodeforcesID string `json:"codeforces_id"`
+
+	Signature string  `json:"signature"`
+	Awards    []Award `json:"awards"`
 }
 
 type SetUserProfileResp struct {
@@ -114,4 +120,10 @@ type GetUserListResp struct {
 	Length    int            `json:"length"`
 	PageTotal int64          `json:"page_total"`
 	Total     int64          `json:"total"`
+}
+
+// 获奖经历结构体
+type Award struct {
+	Name  string `json:"name"`  // 奖项名称
+	Level int    `json:"level"` // 奖项等级: 1-一等奖 2-二等奖 3-三等奖
 }
