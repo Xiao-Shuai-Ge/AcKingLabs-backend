@@ -118,3 +118,17 @@ func (l *SettingLogic) ResetSetting(ctx context.Context, userIDStr string) (resp
 
 	return resp, nil
 }
+
+// GetUserIDsWithHelpPostNotify 获取所有开启了求助帖通知的用户ID列表
+func (l *SettingLogic) GetUserIDsWithHelpPostNotify(ctx context.Context) ([]int64, error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+
+	userIDs, err := l.settingRepo.GetUserIDsWithHelpPostNotify()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取开启求助帖通知的用户列表失败: %v", err)
+		return nil, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	zlog.CtxInfof(ctx, "成功获取开启求助帖通知的用户列表，数量: %d", len(userIDs))
+	return userIDs, nil
+}

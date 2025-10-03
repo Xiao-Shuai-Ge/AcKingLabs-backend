@@ -12,6 +12,9 @@ type UserSetting struct {
 	TimeModel
 	UserID   int64        `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID;uniqueIndex:idx_user_id"`
 	Settings SettingsJSON `json:"settings" gorm:"column:settings;type:json;comment:用户设置JSON"`
+
+	// 需要批量查询的字段，冗余存储以提高查询性能
+	HelpPostNotify bool `json:"help_post_notify" gorm:"column:help_post_notify;type:tinyint(1);default:0;comment:发布求助帖通知;index:idx_help_post_notify"`
 }
 
 // SettingsJSON 用户设置的JSON结构体
