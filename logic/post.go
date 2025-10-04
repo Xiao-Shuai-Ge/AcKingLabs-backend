@@ -29,6 +29,28 @@ const (
 type PostLogic struct {
 }
 
+// getPostMaxLength 根据用户角色获取帖子最大长度限制
+func getPostMaxLength(role int) int {
+	if role >= global.ROLE_ADMIN {
+		return global.POST_MAX_LENGTH_ADMIN
+	}
+	if role >= global.ROLE_PLAYER {
+		return global.POST_MAX_LENGTH_PLAYER
+	}
+	return global.POST_MAX_LENGTH_USER
+}
+
+// getCommentMaxLength 根据用户角色获取评论最大长度限制
+func getCommentMaxLength(role int) int {
+	if role >= global.ROLE_ADMIN {
+		return global.COMMENT_MAX_LENGTH_ADMIN
+	}
+	if role >= global.ROLE_PLAYER {
+		return global.COMMENT_MAX_LENGTH_PLAYER
+	}
+	return global.COMMENT_MAX_LENGTH_USER
+}
+
 func NewPostLogic() *PostLogic {
 	return &PostLogic{}
 }
@@ -68,10 +90,12 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		zlog.CtxErrorf(ctx, "标题不能超过 50 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 2. 内容不能超过 20000 个字符
-	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
-	if utf8.RuneCountInString(req.Content) > 20000 {
-		zlog.CtxErrorf(ctx, "内容不能超过 20000 个字: %v", err)
+	// 2. 根据用户角色判断内容长度限制
+	maxLength := getPostMaxLength(req.UserRole)
+	contentLength := utf8.RuneCountInString(req.Content)
+	zlog.CtxInfof(ctx, "内容长度: %d, 用户角色: %d, 最大长度限制: %d", contentLength, req.UserRole, maxLength)
+	if contentLength > maxLength {
+		zlog.CtxErrorf(ctx, "内容不能超过 %d 个字: %v", maxLength, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 除了周记打卡可以私密，其他类型都不可以私密
@@ -161,10 +185,12 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 		zlog.CtxErrorf(ctx, "标题不能超过 30 个字符: %v", err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 2. 内容不能超过 5000 个字符
-	zlog.CtxInfof(ctx, "内容长度: %d", utf8.RuneCountInString(req.Content))
-	if utf8.RuneCountInString(req.Content) > 20000 {
-		zlog.CtxErrorf(ctx, "内容不能超过 20000 个字: %v", err)
+	// 2. 根据用户角色判断内容长度限制
+	maxLength := getPostMaxLength(req.OperatorRole)
+	contentLength := utf8.RuneCountInString(req.Content)
+	zlog.CtxInfof(ctx, "内容长度: %d, 用户角色: %d, 最大长度限制: %d", contentLength, req.OperatorRole, maxLength)
+	if contentLength > maxLength {
+		zlog.CtxErrorf(ctx, "内容不能超过 %d 个字: %v", maxLength, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 3. 除了周记打卡可以私密，其他类型都不可以私密
@@ -465,9 +491,12 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		zlog.CtxErrorf(ctx, "%v 转换 int64 错误: %v", req.UserID, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
-	// 判断内容长度
-	if utf8.RuneCountInString(req.Content) > 1000 {
-		zlog.CtxErrorf(ctx, "评论内容不能超过 1000 个字符: %v", err)
+	// 根据用户角色判断评论内容长度限制
+	maxLength := getCommentMaxLength(req.UserRole)
+	contentLength := utf8.RuneCountInString(req.Content)
+	zlog.CtxInfof(ctx, "评论内容长度: %d, 用户角色: %d, 最大长度限制: %d", contentLength, req.UserRole, maxLength)
+	if contentLength > maxLength {
+		zlog.CtxErrorf(ctx, "评论内容不能超过 %d 个字符: %v", maxLength, err)
 		return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
 	}
 	// 获取帖子详情，如果帖子不存在，则返回错误
