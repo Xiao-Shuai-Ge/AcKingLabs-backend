@@ -45,3 +45,6 @@ ulearning:
   getCourseActivities:
   getAllCourses:
   login:
+
+invitation:
+  code:
