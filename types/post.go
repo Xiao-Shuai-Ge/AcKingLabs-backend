@@ -91,6 +91,7 @@ type GetLikePostResp struct {
 
 type CreateCommentReq struct {
 	UserID   string `json:"-"`
+	UserRole int    `json:"-"`
 	PostID   string `json:"post_id"`
 	Content  string `json:"content"`
 	FatherID string `json:"father_id"`

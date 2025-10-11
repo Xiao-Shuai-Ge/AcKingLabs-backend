@@ -6,7 +6,7 @@ type Post struct {
 
 	UserID  int64  `json:"user_id" gorm:"column:user_id;type:bigint;comment:用户ID"`
 	Title   string `json:"title" gorm:"column:title;type:varchar(255);comment:标题"`
-	Content string `json:"content" gorm:"column:content;type:text;comment:内容"`
+	Content string `json:"content" gorm:"column:content;type:mediumtext;comment:内容"`
 
 	Type   string `json:"type" gorm:"column:type;type:varchar(63);comment:类型"`
 	Source string `json:"source" gorm:"column:source;type:varchar(255);comment:来源"`

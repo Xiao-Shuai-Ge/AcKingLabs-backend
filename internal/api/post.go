@@ -116,6 +116,7 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 	req.UserID = jwtUtils.GetUserId(c)
+	req.UserRole = jwtUtils.GetRole(c)
 	zlog.CtxInfof(ctx, "创建评论请求: %v", req)
 	resp, err := logic.NewPostLogic().CreateComment(ctx, req)
 	response.Response(c, resp, err)
