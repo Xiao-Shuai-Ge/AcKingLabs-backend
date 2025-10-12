@@ -15,5 +15,6 @@ func main() {
 
 	// 运行服务
 	routerg.RunServer()
+
 	zlog.Infof("程序运行完成！")
 }
