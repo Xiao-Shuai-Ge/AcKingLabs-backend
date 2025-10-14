@@ -214,6 +214,20 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 		zlog.CtxErrorf(ctx, "非作者或管理员无权编辑帖子: %v", err)
 		return resp, response.ErrResp(err, response.PERMISSION_DENIED)
 	}
+	// 如果不是管理员，不允许更改类型和是否私密
+	if req.OperatorRole < global.ROLE_ADMIN {
+		if req.Type != post.Type || req.IsPrivate != post.IsPrivate {
+			zlog.CtxErrorf(ctx, "非管理员不能更改类型和是否私密: %v", err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+	}
+	// 周记类型不允许改来源和类型
+	if post.Type == "diary" {
+		if req.Type != "diary" || req.Source != post.Source {
+			zlog.CtxErrorf(ctx, "周记类型不允许改来源和类型: %v", err)
+			return resp, response.ErrResp(err, response.PARAM_NOT_VALID)
+		}
+	}
 	// 更新帖子
 	post.Title = req.Title
 	post.Content = req.Content
