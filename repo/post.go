@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"tgwp/utils/cacheUtils"
+	"tgwp/utils/elasticSearchUtils"
 	"time"
 
 	"gorm.io/gorm"
@@ -51,7 +54,24 @@ func (r *PostRepo) UpdatePost(post model.Post) error {
 }
 
 func (r *PostRepo) DeletePost(post model.Post) error {
-	return r.DB.Delete(&post).Error
+	// 先删除数据库中的数据
+	err := r.DB.Delete(&post).Error
+	if err != nil {
+		return err
+	}
+
+	// 异步删除ES中的数据
+	go func() {
+		postIDStr := strconv.FormatInt(post.ID, 10)
+		err := elasticSearchUtils.Delete(global.ESClient, "post", postIDStr)
+		if err != nil {
+			zlog.Errorf("异步删除ES数据失败，帖子ID: %d, 错误: %v", post.ID, err)
+		} else {
+			zlog.Debugf("异步删除ES数据成功，帖子ID: %d", post.ID)
+		}
+	}()
+
+	return nil
 }
 
 func (r *PostRepo) GetPostDetail(id int64) (model.Post, error) {

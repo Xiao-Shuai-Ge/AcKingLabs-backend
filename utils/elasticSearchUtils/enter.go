@@ -94,3 +94,28 @@ func Search(client *elasticsearch.Client, index string, query string) (map[strin
 	}
 	return r, nil
 }
+
+func Delete(client *elasticsearch.Client, index string, id string) error {
+	// 删除数据
+	deleteResp, err := client.Delete(index, id)
+	if err != nil {
+		zlog.Errorf("删除数据失败: %v", err)
+		return err
+	}
+	defer deleteResp.Body.Close()
+
+	if deleteResp.StatusCode == 404 {
+		// 数据不存在，不报错
+		zlog.Debugf("删除数据时发现数据不存在，ID: %s", id)
+		return nil
+	}
+
+	if deleteResp.IsError() {
+		zlog.Errorf("删除数据失败，状态码: %d", deleteResp.StatusCode)
+		zlog.Errorf("响应体: %s", deleteResp.String())
+		return errors.New("删除数据失败")
+	}
+
+	zlog.Debugf("删除ES数据成功，ID: %s", id)
+	return nil
+}
