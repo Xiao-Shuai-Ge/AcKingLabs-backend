@@ -208,7 +208,7 @@ func AutoSignin() {
 				if err != nil {
 					zlog.Errorf("签到失败: %v", err)
 					// 如果签到失败，执行教师签到
-					err = teacher.SigninByTeacher(activity.RelationID, int(autoSignin.ClassID))
+					err = teacher.SigninByTeacher(activity.RelationID, user.UserID)
 					if err != nil {
 						zlog.Errorf("教师签到失败: %v", err)
 						continue
