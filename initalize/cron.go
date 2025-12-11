@@ -3,8 +3,6 @@ package initalize
 import (
 	"context"
 	"fmt"
-	"github.com/robfig/cron/v3"
-	"github.com/sirupsen/logrus"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/model"
@@ -13,6 +11,9 @@ import (
 	"tgwp/utils/email"
 	"tgwp/utils/ulearning"
 	"time"
+
+	"github.com/robfig/cron/v3"
+	"github.com/sirupsen/logrus"
 )
 
 func Cron() {
@@ -206,7 +207,13 @@ func AutoSignin() {
 				err = user.SigninByStudent(activity.RelationID, int(autoSignin.ClassID))
 				if err != nil {
 					zlog.Errorf("签到失败: %v", err)
-					continue
+					// 如果签到失败，执行教师签到
+					err = teacher.SigninByTeacher(activity.RelationID, int(autoSignin.ClassID))
+					if err != nil {
+						zlog.Errorf("教师签到失败: %v", err)
+						continue
+					}
+					zlog.Infof("教师签到成功: 【%s】 %s", autoSignin.CourseName, activity.Title)
 				}
 				zlog.Infof("签到成功: 【%s】 %s", autoSignin.CourseName, activity.Title)
 				// 发送邮箱通知
