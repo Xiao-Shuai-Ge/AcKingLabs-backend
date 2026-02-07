@@ -85,3 +85,27 @@ func ChatStream(ctx context.Context, userID string, conversationID string, conte
 
 	return finalConversationID, nil
 }
+
+// RunWorkflow executes a Coze workflow
+func RunWorkflow(ctx context.Context, workflowID string, params map[string]interface{}) (string, error) {
+	token := global.Config.Coze.Token
+
+	authCli := coze.NewTokenAuth(token)
+
+	// Initialize Coze API
+	cozeCli := coze.NewCozeAPI(authCli, coze.WithBaseURL("https://api.coze.cn"), coze.WithHttpClient(&http.Client{
+		Timeout: time.Minute * 2,
+	}))
+
+	req := &coze.RunWorkflowsReq{
+		WorkflowID: workflowID,
+		Parameters: params,
+	}
+
+	resp, err := cozeCli.Workflows.Runs.Create(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Data, nil
+}

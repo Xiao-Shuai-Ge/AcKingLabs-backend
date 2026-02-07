@@ -80,5 +80,22 @@ func (l *ReviewLogic) AuditReview(ctx context.Context, req types.AuditReviewReq)
 		zlog.CtxErrorf(ctx, "UpdateReview failed: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+
+	if req.Status == types.ReviewStatusPass {
+		// 改为公开
+		err = repo.NewPostRepo(global.DB).UpdatePostPrivate(review.PostID, false)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "UpdatePostPrivate failed: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+	} else if req.Status == types.ReviewStatusReject {
+		// 删除
+		err = repo.NewPostRepo(global.DB).DeletePostByID(review.PostID)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "DeletePostByID failed: %v", err)
+			return resp, response.ErrResp(err, response.DATABASE_ERROR)
+		}
+	}
+
 	return resp, nil
 }

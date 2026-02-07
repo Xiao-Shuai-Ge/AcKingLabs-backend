@@ -16,6 +16,7 @@ func NewReviewRepo(db *gorm.DB) *ReviewRepo {
 	}
 }
 
+// CreateReview 创建审核记录
 func (r *ReviewRepo) CreateReview(review model.Review) error {
 	return r.DB.Create(&review).Error
 }
@@ -23,7 +24,7 @@ func (r *ReviewRepo) CreateReview(review model.Review) error {
 func (r *ReviewRepo) GetReviewList(offset, limit int) ([]model.Review, int64, error) {
 	var reviews []model.Review
 	var count int64
-	db := r.DB.Model(&model.Review{}).Where("status = ?", 0)
+	db := r.DB.Model(&model.Review{}) //.Where("status = ?", 0)
 	err := db.Count(&count).Error
 	if err != nil {
 		return nil, 0, err

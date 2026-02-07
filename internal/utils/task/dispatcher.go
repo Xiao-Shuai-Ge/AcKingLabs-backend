@@ -3,18 +3,13 @@ package task
 import (
 	"context"
 	"sync"
-	"tgwp/global"
 	"tgwp/log/zlog"
-	"tgwp/repo"
 )
 
 const (
 	JOB_TYPE_COMPUTE_POST_WEIGHT = "ComputePostWeight"
+	JOB_TYPE_AI_AUDIT            = "AIAudit"
 )
-
-type ComputePostWeightPayload struct {
-	PostID int64
-}
 
 type Job struct {
 	Type    string
@@ -87,15 +82,9 @@ func (d *Dispatcher) handleJob(job Job) {
 	ctx := context.Background()
 	switch job.Type {
 	case JOB_TYPE_COMPUTE_POST_WEIGHT:
-		if payload, ok := job.Payload.(ComputePostWeightPayload); ok {
-			err := repo.NewPostRepo(global.DB).ComputePostWeightByID(payload.PostID)
-			if err != nil {
-				zlog.CtxErrorf(ctx, "Failed to compute post weight for ID %d: %v", payload.PostID, err)
-			}
-		} else {
-			zlog.CtxErrorf(ctx, "Invalid payload for ComputePostWeight: %v", job.Payload)
-		}
-		zlog.CtxDebugf(ctx, "处理成功: %v", job.Payload)
+		d.handleComputePostWeightJob(ctx, job)
+	case JOB_TYPE_AI_AUDIT:
+		d.handleAIAuditJob(ctx, job)
 	default:
 		zlog.CtxErrorf(ctx, "Unknown job type: %s", job.Type)
 	}

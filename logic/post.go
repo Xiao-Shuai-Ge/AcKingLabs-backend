@@ -139,6 +139,17 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		addXp = 8
 	}
 
+	// 添加 AI 审核任务
+	task.GlobalDispatcher.AddJob(task.Job{
+		Type: task.JOB_TYPE_AI_AUDIT,
+		Payload: task.AIAuditPayload{
+			PostID:     id,
+			UserID:     userID,
+			Content:    req.Title + "\n" + req.Content,
+			SenderRole: req.UserRole,
+		},
+	})
+
 	// 如果是帖子而不是周记，不参与经验值计算
 	if req.Type != "diary" {
 		return
@@ -242,6 +253,18 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 	}
 	// 如果是官方贴，需要重新计算热度
 	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
+
+	// 添加 AI 审核任务
+	task.GlobalDispatcher.AddJob(task.Job{
+		Type: task.JOB_TYPE_AI_AUDIT,
+		Payload: task.AIAuditPayload{
+			PostID:     postID,
+			UserID:     post.UserID,
+			Content:    req.Title + "\n" + req.Content,
+			SenderRole: req.OperatorRole,
+		},
+	})
+
 	return
 }
 

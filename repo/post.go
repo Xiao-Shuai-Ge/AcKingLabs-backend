@@ -50,6 +50,15 @@ func (r *PostRepo) ComputePostWeightByID(id int64) (err error) {
 	return err
 }
 
+func (r *PostRepo) UpdatePostPrivate(postID int64, isPrivate bool) error {
+	err := r.DB.Model(&model.Post{}).Where("id = ?", postID).Update("is_private", isPrivate).Error
+	if err != nil {
+		return err
+	}
+	// 清除缓存
+	return cacheUtils.Remove(fmt.Sprintf("cache:post:%d", postID))
+}
+
 func (r *PostRepo) CreatePost(post model.Post) error {
 	return r.DB.Create(&post).Error
 }
@@ -62,6 +71,15 @@ func (r *PostRepo) UpdatePost(post model.Post) error {
 	}
 
 	return r.DB.Save(&post).Error
+}
+
+func (r *PostRepo) DeletePostByID(postID int64) error {
+	var post model.Post
+	err := r.DB.First(&post, postID).Error
+	if err != nil {
+		return err
+	}
+	return r.DeletePost(post)
 }
 
 func (r *PostRepo) DeletePost(post model.Post) error {
