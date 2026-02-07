@@ -108,6 +108,19 @@ func (r *PostRepo) GetPostDetail(id int64) (model.Post, error) {
 	return post, err
 }
 
+func (r *PostRepo) GetPostsByIDs(ids []int64) (map[int64]model.Post, error) {
+	var posts []model.Post
+	err := r.DB.Where("id IN ?", ids).Find(&posts).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[int64]model.Post)
+	for _, p := range posts {
+		result[p.ID] = p
+	}
+	return result, nil
+}
+
 func (r *PostRepo) IsPostLikeExists(post_id int64, user_id int64) (is_like bool, err error) {
 	err = r.DB.Model(&model.PostLike{}).Where("post_id =? AND user_id = ?", post_id, user_id).First(&model.PostLike{}).Error
 	if err != nil {

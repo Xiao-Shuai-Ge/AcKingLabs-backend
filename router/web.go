@@ -144,6 +144,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 		rg.GET("/diary-list", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetDiaryList)
 
+		rg.GET("/review-list", middleware.Limiter(rate.Every(time.Second)*4, 10), middleware.Authentication(global.ROLE_ADMIN), api.GetReviewList)
+		rg.POST("/audit-review", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AuditReview)
+
 		rg.GET("/search", middleware.Limiter(rate.Every(time.Minute)*6, 10), api.SearchPosts)
 	})
 
