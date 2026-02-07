@@ -13,15 +13,16 @@ type GetReviewListResp struct {
 }
 
 type ReviewDetail struct {
-	ID         int64  `json:"id,string"`
-	PostID     int64  `json:"post_id,string"`
-	ReviewerID int64  `json:"reviewer_id,string"`
-	Status     int    `json:"status"`
-	Reason     string `json:"reason"`
-	CreateTime int64  `json:"create_time"`
-	PostTitle  string `json:"post_title"`
-	PostType   string `json:"post_type"`
-	UserID     int64  `json:"user_id,string"`
+	ID          int64  `json:"id,string"`
+	PostID      int64  `json:"post_id,string"`
+	ReviewerID  int64  `json:"reviewer_id,string"`
+	Status      int    `json:"status"`
+	Reason      string `json:"reason"`
+	CreateTime  int64  `json:"create_time"`
+	PostTitle   string `json:"post_title"`
+	PostType    string `json:"post_type"`
+	PostContent string `json:"post_content"`
+	UserID      int64  `json:"user_id,string"`
 }
 
 const (

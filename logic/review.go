@@ -43,18 +43,28 @@ func (l *ReviewLogic) GetReviewList(ctx context.Context, req types.GetReviewList
 
 	for _, r := range reviews {
 		detail := types.ReviewDetail{
-			ID:         r.ID,
-			PostID:     r.PostID,
-			ReviewerID: r.ReviewerID,
-			Status:     r.Status,
-			Reason:     r.Reason,
-			CreateTime: r.CreatedTime,
-			UserID:     0,
+			ID:          r.ID,
+			PostID:      r.PostID,
+			ReviewerID:  r.ReviewerID,
+			Status:      r.Status,
+			Reason:      r.Reason,
+			CreateTime:  r.CreatedTime,
+			PostTitle:   r.PostTitle,
+			PostContent: r.PostContent,
+			UserID:      r.UserID,
 		}
 		if p, ok := posts[r.PostID]; ok {
-			detail.PostTitle = p.Title
 			detail.PostType = p.Type
-			detail.UserID = p.UserID
+			// 如果 Review 表中没有快照（老数据），则使用 Post 表中的数据
+			if detail.PostTitle == "" {
+				detail.PostTitle = p.Title
+			}
+			if detail.PostContent == "" {
+				detail.PostContent = p.Content
+			}
+			if detail.UserID == 0 {
+				detail.UserID = p.UserID
+			}
 		}
 		resp.List = append(resp.List, detail)
 	}

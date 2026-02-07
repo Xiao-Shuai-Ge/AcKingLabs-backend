@@ -145,6 +145,7 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		Payload: task.AIAuditPayload{
 			PostID:     id,
 			UserID:     userID,
+			Title:      req.Title,
 			Content:    req.Title + "\n" + req.Content,
 			SenderRole: req.UserRole,
 		},
@@ -260,6 +261,7 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 		Payload: task.AIAuditPayload{
 			PostID:     postID,
 			UserID:     post.UserID,
+			Title:      req.Title,
 			Content:    req.Title + "\n" + req.Content,
 			SenderRole: req.OperatorRole,
 		},

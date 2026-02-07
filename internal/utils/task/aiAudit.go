@@ -16,6 +16,7 @@ import (
 type AIAuditPayload struct {
 	PostID     int64
 	UserID     int64
+	Title      string
 	Content    string
 	SenderRole int
 }
@@ -63,6 +64,9 @@ func (d *Dispatcher) handleAIAuditJob(ctx context.Context, job Job) {
 					CreatedTime: time.Now().UnixMilli(),
 					UpdatedTime: time.Now().UnixMilli(),
 				},
+				PostTitle:   payload.Title,
+				PostContent: payload.Content,
+				UserID:      payload.UserID,
 			}
 			if err := repo.NewReviewRepo(global.DB).CreateReview(review); err != nil {
 				zlog.CtxErrorf(ctx, "Failed to create review record: %v", err)
@@ -71,7 +75,7 @@ func (d *Dispatcher) handleAIAuditJob(ctx context.Context, job Job) {
 			// 2. 发送通知给作者
 			notifyContent := fmt.Sprintf("您的帖子因“%s”未通过审核，已隐藏并等待管理员二次审核。", result.Reason)
 			// 这里 url 可以是帖子详情页或者特定的审核详情页，暂时跳转到帖子详情
-			url := fmt.Sprintf("/post/%d", payload.PostID)
+			url := fmt.Sprintf("/learn/%d", payload.PostID)
 			notifyService.SendSystemMessageNotify(ctx, payload.UserID, notifyContent, url)
 
 			// 3. 将帖子改为隐藏
