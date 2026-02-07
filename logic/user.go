@@ -425,12 +425,13 @@ func (l *UserLogic) GetUserList(ctx context.Context, req types.GetUserListReq) (
 	zlog.CtxInfof(ctx, "获取用户列表请求: %v", req)
 
 	// 获取用户列表
-	users, total, err := repo.NewUserRepo(global.DB).GetUserList(req.Page, req.Count)
+	users, total, err := repo.NewUserRepo(global.DB).GetUserList(req.Page, req.Count, req.Keyword)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "获取用户列表失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
 
+	resp.Users = make([]types.UserListItem, 0)
 	// 填入参数
 	for _, user := range users {
 		resp.Users = append(resp.Users, types.UserListItem{

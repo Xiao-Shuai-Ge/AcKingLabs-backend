@@ -97,8 +97,9 @@ type DeleteUserResp struct {
 
 // 获取用户列表请求（按ID排序分页）
 type GetUserListReq struct {
-	Page  int `form:"page" binding:"required,min=1"`
-	Count int `form:"count" binding:"required,min=1,max=100"`
+	Page    int    `form:"page" binding:"required,min=1"`
+	Count   int    `form:"count" binding:"required,min=1,max=100"`
+	Keyword string `form:"keyword"`
 }
 
 // 用户列表项

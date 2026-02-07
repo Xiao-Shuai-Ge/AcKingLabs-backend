@@ -62,11 +62,22 @@ func (r *UserRepo) DeleteUser(id int64) error {
 }
 
 // GetUserList 获取用户列表（按ID排序分页）
-func (r *UserRepo) GetUserList(page int, count int) ([]model.User, int64, error) {
+func (r *UserRepo) GetUserList(page int, count int, keyword string) ([]model.User, int64, error) {
 	var users []model.User
 	offset := (page - 1) * count
-	err := r.DB.Model(&model.User{}).Order("id ASC").Offset(offset).Limit(count).Find(&users).Error
+
+	db := r.DB.Model(&model.User{})
+	if keyword != "" {
+		likePattern := "%" + keyword + "%"
+		db = db.Where("username LIKE ? OR email LIKE ? OR real_name LIKE ? OR student_no LIKE ?", likePattern, likePattern, likePattern, likePattern)
+	}
+
 	var total int64
-	r.DB.Model(&model.User{}).Count(&total)
+	err := db.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = db.Order("id ASC").Offset(offset).Limit(count).Find(&users).Error
 	return users, total, err
 }
