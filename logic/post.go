@@ -9,6 +9,7 @@ import (
 	"tgwp/global"
 	"tgwp/internal/utils/messageService"
 	"tgwp/internal/utils/notifyService"
+	"tgwp/internal/utils/task"
 	"tgwp/log/zlog"
 	"tgwp/model"
 	"tgwp/repo"
@@ -239,6 +240,8 @@ func (l *PostLogic) EditPost(ctx context.Context, req types.EditPostReq) (resp t
 		zlog.CtxErrorf(ctx, "创建帖子失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+	// 如果是官方贴，需要重新计算热度
+	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
 	return
 }
 
@@ -378,6 +381,7 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 			return resp, response.ErrResp(err, response.DATABASE_ERROR)
 		}
 		resp.IsLike = false
+		task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
 		return
 	} else {
 		// 先判断是否为管理员点赞
@@ -426,6 +430,9 @@ func (l *PostLogic) LikePost(ctx context.Context, req types.LikePostReq) (resp t
 		}
 		resp.IsLike = true
 	}
+	// 计算帖子权重
+	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
+
 	// 发送点赞通知
 	// 先用redis判断两小时内是否有过点赞通知，如果有，则不再发送
 	key := fmt.Sprintf(REDIS_LIKE_MESSAGE, postID, operatorID)
@@ -580,6 +587,7 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 			notifyService.SendReplyNotify(ctx, post.UserID, userID, postContent, url)
 		}
 	}
+	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
 	return
 }
 
@@ -640,6 +648,8 @@ func (l *PostLogic) DeleteComment(ctx context.Context, req types.DeleteCommentRe
 		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
 	}
+	// 计算帖子权重
+	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: comment.PostID}})
 	return
 }
 
@@ -1017,6 +1027,8 @@ func (l *PostLogic) SetPostFeature(ctx context.Context, req types.SetPostFeature
 		url = fmt.Sprintf("/learn/%d", postID)
 	}
 	messageService.SendSystemMessage(post.UserID, fmt.Sprintf("获得 20 经验值：帖子《%s》被设为精华", post.Title), url)
+	// 计算帖子权重
+	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
 	return
 }
 

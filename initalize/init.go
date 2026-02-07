@@ -5,6 +5,7 @@ import (
 	"tgwp/cmd/flags"
 	"tgwp/global"
 	"tgwp/internal/utils/messageService"
+	"tgwp/internal/utils/task"
 	"tgwp/utils"
 )
 
@@ -31,6 +32,9 @@ func Init() {
 
 	// 初始化全局雪花ID生成器
 	InitSnowflake()
+
+	// 初始化任务调度器
+	task.Init(10, 1000)
 
 	// 开启定时任务
 	Cron()

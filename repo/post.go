@@ -39,6 +39,17 @@ func (r *PostRepo) ComputePostWeight() (err error) {
 	return err
 }
 
+func (r *PostRepo) ComputePostWeightByID(id int64) (err error) {
+	// 权重 = 创建时间+点赞数量(一小时)+评论数量(一小时)+管理员是否点赞(三天)+精选(两周)
+	err = r.DB.Model(&model.Post{}).Where("id = ? AND type != ?", id, "no_weight").Update("weight", gorm.Expr("created_time + (likes * 3600000) + (comments * 3600000) + (is_admin_like * 259200000) + (is_featured * 1209600000)")).Error
+	if err != nil {
+		return err
+	}
+	// 官方贴根据更新时间计算
+	err = r.DB.Model(&model.Post{}).Where("id = ? AND type = ?", id, "official").Update("weight", gorm.Expr("updated_time + (likes * 3600000) + (comments * 3600000) + (is_admin_like * 259200000) + (is_featured * 1209600000)")).Error
+	return err
+}
+
 func (r *PostRepo) CreatePost(post model.Post) error {
 	return r.DB.Create(&post).Error
 }

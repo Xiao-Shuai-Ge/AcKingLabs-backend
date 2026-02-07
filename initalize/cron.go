@@ -23,10 +23,10 @@ func Cron() {
 	}
 	crontab := cron.New(cron.WithSeconds(), cron.WithLocation(zone))
 	// 每10分钟计算帖子热度
-	_, err = crontab.AddFunc("@every 10m", ComputePostWeight)
-	if err != nil {
-		zlog.Errorf("添加定时任务失败:%v", err)
-	}
+	//_, err = crontab.AddFunc("@every 10m", ComputePostWeight)
+	//if err != nil {
+	//	zlog.Errorf("添加定时任务失败:%v", err)
+	//}
 	// 每10分钟同步Elasticsearch索引
 	_, err = crontab.AddFunc("@every 10m", SyncElasticsearch)
 	if err != nil {
