@@ -49,12 +49,22 @@ func (r *ResumeRepo) DeleteResume(id int64) error {
 }
 
 // GetResumeList 获取简历列表（按ID排序分页）
-func (r *ResumeRepo) GetResumeList(page int, count int) ([]model.Resume, int64, error) {
+func (r *ResumeRepo) GetResumeList(page int, count int, keyword string, status *int) ([]model.Resume, int64, error) {
 	var resumes []model.Resume
 	offset := (page - 1) * count
-	err := r.DB.Model(&model.Resume{}).Order("id ASC").Offset(offset).Limit(count).Find(&resumes).Error
+	db := r.DB.Model(&model.Resume{})
+
+	if keyword != "" {
+		db = db.Where("real_name LIKE ? OR student_no LIKE ? OR email LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if status != nil {
+		db = db.Where("status = ?", *status)
+	}
+
 	var total int64
-	r.DB.Model(&model.Resume{}).Count(&total)
+	db.Count(&total)
+
+	err := db.Order("id ASC").Offset(offset).Limit(count).Find(&resumes).Error
 	return resumes, total, err
 }
 

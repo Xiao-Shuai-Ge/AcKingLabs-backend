@@ -57,8 +57,10 @@ type GetResumeDetailResp struct {
 
 // 获取简历列表请求（管理员功能）
 type GetResumeListReq struct {
-	Page  int `form:"page" binding:"required,min=1"`
-	Count int `form:"count" binding:"required,min=1,max=200"`
+	Page    int    `form:"page" binding:"required,min=1"`
+	Count   int    `form:"count" binding:"required,min=1,max=200"`
+	Keyword string `form:"keyword"`
+	Status  *int   `form:"status"`
 }
 
 // 简历列表项

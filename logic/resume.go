@@ -216,7 +216,7 @@ func (l *ResumeLogic) GetResumeList(ctx context.Context, req types.GetResumeList
 	zlog.CtxInfof(ctx, "获取简历列表请求: %v", req)
 
 	// 获取简历列表
-	resumes, total, err := repo.NewResumeRepo(global.DB).GetResumeList(req.Page, req.Count)
+	resumes, total, err := repo.NewResumeRepo(global.DB).GetResumeList(req.Page, req.Count, req.Keyword, req.Status)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "获取简历列表失败: %v", err)
 		return resp, response.ErrResp(err, response.DATABASE_ERROR)
