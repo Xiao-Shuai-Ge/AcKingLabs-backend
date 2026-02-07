@@ -4,18 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/coze-dev/coze-go"
-	"github.com/go-redis/redis/v8"
-	"github.com/gorilla/websocket"
-	"io"
-	"net/http"
 	"strconv"
 	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/manager"
 	"tgwp/types"
+	"tgwp/utils/cozeUtils"
 	"time"
+
+	"github.com/coze-dev/coze-go"
+	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -172,43 +171,11 @@ func SaveChatMessage(ctx context.Context, message types.ChatMessageResp) {
 	}
 }
 
-// 定义 API 请求和响应结构体
-type AiMessage struct {
-	Role        string `json:"role"`
-	Type        string `json:"type"`
-	ContentType string `json:"content_type"`
-	Content     string `json:"content"`
-}
-
-type RequestBody struct {
-	BotID              string      `json:"bot_id"`
-	UserID             string      `json:"user_id"`
-	Stream             bool        `json:"stream"`
-	AdditionalMessages []AiMessage `json:"additional_messages"`
-}
-
-type StreamResponse struct {
-	Choices []struct {
-		Delta struct {
-			Content string `json:"content"`
-		} `json:"delta"`
-	} `json:"choices"`
-}
-
 func (l *WebsocketLogic) AiChat(content string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	token := global.Config.Coze.Token
-	botID := global.Config.Coze.BotID
 	userID := strconv.FormatInt(l.userID, 10)
-
-	authCli := coze.NewTokenAuth(token)
-
-	// 初始化 Coze API
-	cozeCli := coze.NewCozeAPI(authCli, coze.WithBaseURL("https://api.coze.cn"), coze.WithHttpClient(&http.Client{
-		Timeout: time.Minute * 2,
-	}))
 
 	Seq := 0                                      // 记录当前消息序号
 	id := global.SnowflakeNode.Generate().Int64() // 生成唯一ID
@@ -230,42 +197,17 @@ func (l *WebsocketLogic) AiChat(content string) {
 	}
 	zlog.Debugf("会话id: %v", conversationID)
 
-	// 创建会话
-	req := &coze.CreateChatsReq{
-		ConversationID: conversationID,
-		BotID:          botID,
-		UserID:         userID,
-		Messages: []*coze.Message{
-			coze.BuildUserQuestionText(content, nil),
-		},
-	}
-
-	resp, err := cozeCli.Chat.Stream(ctx, req)
-	if err != nil {
-		fmt.Printf("Error starting chats: %v\n", err)
-		return
-	}
-
-	defer resp.Close()
-	for {
-		event, err := resp.Recv()
-		if errors.Is(err, io.EOF) {
-			zlog.Debugf("开始流式传输")
-			break
-		}
-		if err != nil {
-			zlog.Errorf("流式传输错误: %v\n", err)
-			break
-		}
-		if event.Event == coze.ChatEventConversationMessageDelta {
-			if event.Message != nil && conversationID == "" {
-				conversationID = event.Message.ConversationID
+	// 定义回调函数
+	callback := func(content string, currentConversationID string, isDelta bool, usage *coze.ChatUsage) error {
+		if isDelta {
+			if conversationID == "" && currentConversationID != "" {
+				conversationID = currentConversationID
 				zlog.Debugf("获取对话id: %v", conversationID)
 				// 保存会话id到 redis
 				err = global.Rdb.Set(ctx, REDIS_AI_CONVERSATION_ID, conversationID, time.Minute*5).Err()
 				if err != nil {
 					zlog.Errorf("保存会话id到 redis 失败: %v", err)
-					return
+					return err
 				}
 			}
 			// 打包信息内容
@@ -273,14 +215,14 @@ func (l *WebsocketLogic) AiChat(content string) {
 				Seq:       Seq,
 				Type:      "ai",
 				ID:        id,
-				Content:   event.Message.Content,
+				Content:   content,
 				Timestamp: time.Now().UnixMilli(),
 			}
 			Seq++
 			respJson, err := json.Marshal(resp)
 			if err != nil {
 				zlog.Errorf("websocket 打包消息格式错误: %s", err)
-				return
+				return err
 			}
 			// 群发传输信息
 			msg := manager.Message{
@@ -288,12 +230,20 @@ func (l *WebsocketLogic) AiChat(content string) {
 				Content: string(respJson),
 			}
 			manager.WebsocketManager.Broadcast <- msg
-			allContent += event.Message.Content
-		} else if event.Event == coze.ChatEventConversationChatCompleted {
-			zlog.Debugf("本次使用token数: %d", event.Chat.Usage.TokenCount)
+			allContent += content
 		} else {
-			zlog.Debugf("未知事件: %s", event.Event)
+			if usage != nil {
+				zlog.Debugf("本次使用token数: %d", usage.TokenCount)
+			}
 		}
+		return nil
+	}
+
+	// 调用 Coze 工具类
+	_, err = cozeUtils.ChatStream(ctx, userID, conversationID, content, callback)
+	if err != nil {
+		zlog.Errorf("Coze ChatStream error: %v", err)
+		return
 	}
 
 	// 保存聊天记录
