@@ -9,6 +9,7 @@ import (
 const (
 	JOB_TYPE_COMPUTE_POST_WEIGHT = "ComputePostWeight"
 	JOB_TYPE_AI_AUDIT            = "AIAudit"
+	JOB_TYPE_AI_COMMENT          = "AIComment"
 )
 
 type Job struct {
@@ -85,6 +86,8 @@ func (d *Dispatcher) handleJob(job Job) {
 		d.handleComputePostWeightJob(ctx, job)
 	case JOB_TYPE_AI_AUDIT:
 		d.handleAIAuditJob(ctx, job)
+	case JOB_TYPE_AI_COMMENT:
+		d.handleAICommentJob(ctx, job)
 	default:
 		zlog.CtxErrorf(ctx, "Unknown job type: %s", job.Type)
 	}

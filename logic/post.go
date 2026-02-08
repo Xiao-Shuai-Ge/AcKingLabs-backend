@@ -151,6 +151,15 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		},
 	})
 
+	// 添加 AI 评论任务
+	task.GlobalDispatcher.AddJob(task.Job{
+		Type: task.JOB_TYPE_AI_COMMENT,
+		Payload: task.AICommentPayload{
+			PostID:  id,
+			Content: req.Title + "\n" + req.Content,
+		},
+	})
+
 	// 如果是帖子而不是周记，不参与经验值计算
 	if req.Type != "diary" {
 		return
