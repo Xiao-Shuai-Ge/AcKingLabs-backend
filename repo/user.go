@@ -81,3 +81,24 @@ func (r *UserRepo) GetUserList(page int, count int, keyword string) ([]model.Use
 	err = db.Order("id ASC").Offset(offset).Limit(count).Find(&users).Error
 	return users, total, err
 }
+
+// SearchUsers 搜索用户（公开）
+func (r *UserRepo) SearchUsers(page int, count int, keyword string) ([]model.User, int64, error) {
+	var users []model.User
+	offset := (page - 1) * count
+
+	db := r.DB.Model(&model.User{})
+	if keyword != "" {
+		likePattern := "%" + keyword + "%"
+		db = db.Where("username LIKE ?", likePattern)
+	}
+
+	var total int64
+	err := db.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = db.Order("xp DESC").Offset(offset).Limit(count).Find(&users).Error
+	return users, total, err
+}

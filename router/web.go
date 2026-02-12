@@ -100,6 +100,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
 
 		rg.GET("/rankings", middleware.Limiter(rate.Every(time.Second)*2, 4), api.GetRankings)
+		rg.GET("/search", middleware.Limiter(rate.Every(time.Second)*2, 4), api.SearchUsers)
 
 		// 用户设置相关路由
 		rg.GET("/setting", middleware.Limiter(rate.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_GUEST), api.GetSetting)

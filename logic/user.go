@@ -460,3 +460,36 @@ func (l *UserLogic) GetUserList(ctx context.Context, req types.GetUserListReq) (
 	zlog.CtxInfof(ctx, "获取用户列表成功，共 %d 条记录", len(users))
 	return resp, nil
 }
+
+// SearchUsers 搜索用户
+func (l *UserLogic) SearchUsers(ctx context.Context, req types.SearchUserReq) (resp types.SearchUserResp, err error) {
+	defer utils.CtxRecordTime(ctx, time.Now())()
+	zlog.CtxInfof(ctx, "搜索用户请求: %v", req)
+
+	// 搜索用户
+	users, total, err := repo.NewUserRepo(global.DB).SearchUsers(req.Page, req.Count, req.Keyword)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "搜索用户失败: %v", err)
+		return resp, response.ErrResp(err, response.DATABASE_ERROR)
+	}
+
+	resp.Users = make([]types.SearchUserItem, 0)
+	for _, user := range users {
+		resp.Users = append(resp.Users, types.SearchUserItem{
+			ID:       user.ID,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+			Xp:       user.Xp,
+			Role:     user.Role,
+		})
+	}
+	resp.Length = len(users)
+	if int(total)%req.Count == 0 {
+		resp.PageTotal = int64(int(total) / req.Count)
+	} else {
+		resp.PageTotal = int64(int(total)/req.Count + 1)
+	}
+	resp.Total = total
+
+	return resp, nil
+}

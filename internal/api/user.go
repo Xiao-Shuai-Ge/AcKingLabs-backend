@@ -114,3 +114,15 @@ func GetUserList(c *gin.Context) {
 	resp, err := logic.NewUserLogic().GetUserList(ctx, req)
 	response.Response(c, resp, err)
 }
+
+// SearchUsers 搜索用户
+func SearchUsers(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.SearchUserReq](c)
+	if err != nil {
+		return
+	}
+	zlog.CtxInfof(ctx, "搜索用户请求: %v", req)
+	resp, err := logic.NewUserLogic().SearchUsers(ctx, req)
+	response.Response(c, resp, err)
+}

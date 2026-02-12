@@ -128,3 +128,27 @@ type Award struct {
 	Name  string `json:"name"`  // 奖项名称
 	Level int    `json:"level"` // 奖项等级: 1-一等奖 2-二等奖 3-三等奖
 }
+
+// 搜索用户请求
+type SearchUserReq struct {
+	Page    int    `form:"page" binding:"required,min=1"`
+	Count   int    `form:"count" binding:"required,min=1,max=100"`
+	Keyword string `form:"keyword"`
+}
+
+// 搜索用户响应
+type SearchUserResp struct {
+	Users     []SearchUserItem `json:"users"`
+	Length    int              `json:"length"`
+	PageTotal int64            `json:"page_total"`
+	Total     int64            `json:"total"`
+}
+
+// 搜索用户列表项
+type SearchUserItem struct {
+	ID       int64  `json:"id,string"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+	Xp       int    `json:"xp"`
+	Role     int    `json:"role"`
+}
