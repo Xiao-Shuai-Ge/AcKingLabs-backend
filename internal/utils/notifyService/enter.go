@@ -17,6 +17,7 @@ const (
 	NotifyTypeSystemMessage NotifyType = "system_message" // 系统消息
 	NotifyTypeLike          NotifyType = "like"           // 点赞通知
 	NotifyTypeReply         NotifyType = "reply"          // 回复通知
+	NotifyTypeMention       NotifyType = "mention"        // 提及通知
 	NotifyTypeHelpPost      NotifyType = "help_post"      // 求助帖通知
 )
 
@@ -47,6 +48,8 @@ func sendInternalMessage(data NotifyData) {
 		messageService.SendLikeMessageIfNotSelf(data.UserID, data.SenderID, data.Content, data.URL)
 	case NotifyTypeReply:
 		messageService.SendCommentMessageIfNotSelf(data.UserID, data.SenderID, data.Content, data.URL)
+	case NotifyTypeMention:
+		messageService.SendCommentMessageIfNotSelf(data.UserID, data.SenderID, data.Content, data.URL)
 	case NotifyTypeHelpPost:
 		messageService.SendSystemMessage(data.UserID, data.Content, data.URL)
 	}
@@ -71,6 +74,8 @@ func checkAndSendEmail(ctx context.Context, data NotifyData) {
 		shouldSendEmail = setting.Settings.LikeNotify
 	case NotifyTypeReply:
 		shouldSendEmail = setting.Settings.ReplyNotify
+	case NotifyTypeMention:
+		shouldSendEmail = setting.Settings.MentionNotify
 	case NotifyTypeHelpPost:
 		shouldSendEmail = setting.HelpPostNotify // 使用冗余字段
 	}
@@ -114,6 +119,8 @@ func getEmailSubject(notifyType NotifyType) string {
 		return "[AcKing学习分享平台] [点赞通知]"
 	case NotifyTypeReply:
 		return "[AcKing学习分享平台] [回复通知]"
+	case NotifyTypeMention:
+		return "[AcKing学习分享平台] [提及通知]"
 	case NotifyTypeHelpPost:
 		return "[AcKing学习分享平台] [求助帖通知]"
 	default:
@@ -178,6 +185,20 @@ func SendReplyNotify(ctx context.Context, userID, senderID int64, content, url s
 	}
 	SendNotify(ctx, NotifyData{
 		Type:     NotifyTypeReply,
+		UserID:   userID,
+		SenderID: senderID,
+		Content:  content,
+		URL:      url,
+	})
+}
+
+// SendMentionNotify 发送提及通知
+func SendMentionNotify(ctx context.Context, userID, senderID int64, content, url string) {
+	if userID == senderID {
+		return // 不给自己发通知
+	}
+	SendNotify(ctx, NotifyData{
+		Type:     NotifyTypeMention,
 		UserID:   userID,
 		SenderID: senderID,
 		Content:  content,

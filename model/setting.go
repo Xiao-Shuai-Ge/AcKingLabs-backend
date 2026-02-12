@@ -23,6 +23,7 @@ type SettingsJSON struct {
 	SystemMessageEmailNotify bool `json:"system_message_email_notify"` // 系统消息邮箱通知
 	LikeNotify               bool `json:"like_notify"`                 // 点赞通知
 	ReplyNotify              bool `json:"reply_notify"`                // 回复通知
+	MentionNotify            bool `json:"mention_notify"`              // 提及通知
 	HelpPostNotify           bool `json:"help_post_notify"`            // 发布求助帖通知
 }
 
@@ -32,6 +33,7 @@ func GetDefaultSettings() SettingsJSON {
 		SystemMessageEmailNotify: false, // 系统消息邮箱通知默认关闭
 		LikeNotify:               false, // 点赞通知默认关闭
 		ReplyNotify:              true,  // 回复通知默认开启
+		MentionNotify:            true,  // 提及通知默认开启
 		HelpPostNotify:           false, // 发布求助帖通知默认关闭
 	}
 }
@@ -42,6 +44,9 @@ func (s *SettingsJSON) Scan(value interface{}) error {
 	if !ok {
 		return errors.New("类型转换失败")
 	}
+	// 先填充默认设置，确保新增字段有默认值
+	*s = GetDefaultSettings()
+	// 再解析 JSON，覆盖已有的字段
 	return json.Unmarshal(bytes, s)
 }
 
