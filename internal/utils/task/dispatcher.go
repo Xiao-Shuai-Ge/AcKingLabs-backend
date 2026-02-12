@@ -11,6 +11,7 @@ const (
 	JOB_TYPE_COMPUTE_POST_WEIGHT = "ComputePostWeight"
 	JOB_TYPE_AI_AUDIT            = "AIAudit"
 	JOB_TYPE_AI_COMMENT          = "AIComment"
+	JOB_TYPE_MENTION_NOTIFY      = "MentionNotify"
 )
 
 type Job struct {
@@ -105,6 +106,8 @@ func (d *Dispatcher) handleJob(ctx context.Context, job Job) {
 		d.handleAIAuditJob(ctx, job)
 	case JOB_TYPE_AI_COMMENT:
 		d.handleAICommentJob(ctx, job)
+	case JOB_TYPE_MENTION_NOTIFY:
+		d.handleMentionNotifyJob(ctx, job)
 	default:
 		zlog.CtxErrorf(ctx, "Unknown job type: %s", job.Type)
 	}

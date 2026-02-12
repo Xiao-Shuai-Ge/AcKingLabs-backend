@@ -160,6 +160,17 @@ func (l *PostLogic) CreatePost(ctx context.Context, req types.CreatePostReq) (re
 		},
 	})
 
+	// 添加 @通知任务
+	task.GlobalDispatcher.AddJob(task.Job{
+		Type: task.JOB_TYPE_MENTION_NOTIFY,
+		Payload: task.MentionNotifyPayload{
+			PostID:     id,
+			SenderID:   userID,
+			Content:    req.Content,
+			SourceType: "post",
+		},
+	})
+
 	// 如果是帖子而不是周记，不参与经验值计算
 	if req.Type != "diary" {
 		return
@@ -622,6 +633,18 @@ func (l *PostLogic) CreateComment(ctx context.Context, req types.CreateCommentRe
 		}
 	}
 	task.GlobalDispatcher.AddJob(task.Job{Type: task.JOB_TYPE_COMPUTE_POST_WEIGHT, Payload: task.ComputePostWeightPayload{PostID: postID}})
+
+	// 添加 @通知任务
+	task.GlobalDispatcher.AddJob(task.Job{
+		Type: task.JOB_TYPE_MENTION_NOTIFY,
+		Payload: task.MentionNotifyPayload{
+			PostID:     postID,
+			SenderID:   userID,
+			Content:    req.Content,
+			SourceType: "comment",
+		},
+	})
+
 	return
 }
 
