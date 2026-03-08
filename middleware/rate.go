@@ -42,7 +42,11 @@ func Limiter(r ratelimiter.Limit, b int) gin.HandlerFunc {
 			identity = fmt.Sprintf("ip:%s", ip)
 		}
 
-		key := fmt.Sprintf("%s|%v|%d", identity, r, b)
+		routeKey := c.FullPath()
+		if routeKey == "" {
+			routeKey = c.Request.URL.Path
+		}
+		key := fmt.Sprintf("%s|%s|%s", identity, c.Request.Method, routeKey)
 
 		zlog.CtxDebugf(ctx, "调试：生成的令牌桶键：%v", key)
 
