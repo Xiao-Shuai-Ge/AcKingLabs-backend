@@ -2,11 +2,15 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/time/rate"
+	"strings"
 	"sync"
+	"tgwp/global"
 	"tgwp/log/zlog"
 	"tgwp/response"
+	"tgwp/utils/jwtUtils"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 )
 
 var limiters sync.Map
@@ -17,10 +21,32 @@ func Limiter(r rate.Limit, b int) gin.HandlerFunc {
 		ctx := zlog.GetCtxFromGin(c)
 		ip := c.ClientIP()
 
-		// 生成唯一键，组合IP、速率和桶大小
-		key := fmt.Sprintf("%s|%v|%d", ip, r, b)
+		userID := jwtUtils.GetUserId(c)
+		if userID == "" {
+			authorization := c.GetHeader("Authorization")
+			if authorization != "" {
+				list := strings.Split(authorization, " ")
+				if len(list) == 2 {
+					data, err := jwtUtils.IdentifyToken(list[1])
+					if err == nil && data.Class == global.AUTH_ENUMS_ATOKEN && data.Userid != "" {
+						userID = data.Userid
+					}
+				}
+			}
+		}
 
-		// 为每个IP和限流配置创建独立的限流器
+		identity := ""
+		if userID != "" {
+			identity = fmt.Sprintf("uid:%s", userID)
+		} else {
+			identity = fmt.Sprintf("ip:%s", ip)
+		}
+
+		key := fmt.Sprintf("%s|%v|%d", identity, r, b)
+
+		zlog.CtxDebugf(ctx, "调试：生成的令牌桶键：%v", key)
+
+		// 为每个身份和限流配置创建独立的限流器
 		limiter, ok := limiters.Load(key)
 		if !ok {
 			limiter = rate.NewLimiter(r, b)
