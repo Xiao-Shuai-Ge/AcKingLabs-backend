@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"tgwp/global"
 	"tgwp/log/zlog"
+	"tgwp/middleware"
 	"tgwp/model"
 	"tgwp/repo"
 	"tgwp/utils/contest"
@@ -29,6 +30,11 @@ func Cron() {
 	//}
 	// 每10分钟同步Elasticsearch索引
 	_, err = crontab.AddFunc("@every 10m", SyncElasticsearch)
+	if err != nil {
+		zlog.Errorf("添加定时任务失败:%v", err)
+	}
+	// 每10秒清理限流桶
+	_, err = crontab.AddFunc("@every 10s", middleware.CleanupLimiters)
 	if err != nil {
 		zlog.Errorf("添加定时任务失败:%v", err)
 	}
