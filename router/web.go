@@ -9,11 +9,11 @@ import (
 	"tgwp/log/zlog"
 	"tgwp/manager"
 	"tgwp/middleware"
+	"tgwp/utils/ratelimiter"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"golang.org/x/time/rate"
 )
 
 // RunServer 启动服务器 路由层
@@ -62,127 +62,127 @@ func startWebsocket(r *gin.Engine) {
 func registerRoutes(routeManager *manager.RouteManager) {
 	// 注册通用路由组
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/test", middleware.Limiter(rate.Every(time.Hour)*1, 10), api.Template)
+		rg.POST("/test", middleware.Limiter(ratelimiter.Every(time.Minute)*6, 10), api.Template)
 
-		rg.GET("/signin-list", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninList)
-		rg.POST("/signin", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.Signin)
-		rg.POST("/signin-teacher", middleware.Limiter(rate.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninTeacher)
+		rg.GET("/signin-list", middleware.Limiter(ratelimiter.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninList)
+		rg.POST("/signin", middleware.Limiter(ratelimiter.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.Signin)
+		rg.POST("/signin-teacher", middleware.Limiter(ratelimiter.Every(time.Minute)*5, 8), middleware.Authentication(global.ROLE_USER), api.SigninTeacher)
 
-		rg.GET("/auto-list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.GetAutoList)
-		rg.POST("/auto-setting", middleware.Limiter(rate.Every(time.Minute)*3, 5), middleware.Authentication(global.ROLE_USER), api.AutoSetting)
+		rg.GET("/auto-list", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.GetAutoList)
+		rg.POST("/auto-setting", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 5), middleware.Authentication(global.ROLE_USER), api.AutoSetting)
 	})
 
 	// 注册文件上传相关路由组
 	routeManager.RegisterFileRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/upload", middleware.Limiter(rate.Every(time.Minute)*3, 5), api.UploadFile)
+		rg.POST("/upload", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 5), api.UploadFile)
 	})
 
 	// 注册登录相关路由组
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/send-code", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.SendCode)
-		rg.POST("/register", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Register)
-		rg.POST("/login", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.Login)
-		rg.POST("/refresh-token", middleware.Limiter(rate.Every(time.Second)*4, 8), api.RefreshToken)
+		rg.POST("/send-code", middleware.Limiter(ratelimiter.Every(time.Minute)*4, 4), api.SendCode)
+		rg.POST("/register", middleware.Limiter(ratelimiter.Every(time.Minute)*4, 4), api.Register)
+		rg.POST("/login", middleware.Limiter(ratelimiter.Every(time.Minute)*4, 4), api.Login)
+		rg.POST("/refresh-token", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), api.RefreshToken)
 
 		// 找回密码相关路由（复用send-code发送验证码）
-		rg.POST("/reset-password", middleware.Limiter(rate.Every(time.Minute)*4, 4), api.ResetPassword)
+		rg.POST("/reset-password", middleware.Limiter(ratelimiter.Every(time.Minute)*4, 4), api.ResetPassword)
 
-		rg.GET("/test", middleware.Limiter(rate.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_SUPER_ADMIN), api.TokenTest)
+		rg.GET("/test", middleware.Limiter(ratelimiter.Every(time.Second)*2, 5), middleware.Authentication(global.ROLE_SUPER_ADMIN), api.TokenTest)
 	})
 
 	// 注册用户相关路由组
 	routeManager.RegisterUserRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
-		rg.GET("/my-info", middleware.Limiter(rate.Every(time.Second)*5, 10), middleware.Authentication(global.ROLE_GUEST), api.GetMyUserInfo)
+		rg.GET("/info", middleware.Limiter(ratelimiter.Every(time.Second)*20, 40), api.GetUserInfo)
+		rg.GET("/my-info", middleware.Limiter(ratelimiter.Every(time.Second)*5, 10), middleware.Authentication(global.ROLE_GUEST), api.GetMyUserInfo)
 		// 获取和修改用户资料
-		rg.GET("/profile", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetProfile)
-		rg.POST("/profile", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetProfile)
-		rg.POST("/role", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
+		rg.GET("/profile", middleware.Limiter(ratelimiter.Every(time.Second)*10, 20), api.GetProfile)
+		rg.POST("/profile", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetProfile)
+		rg.POST("/role", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.SetRole)
 
-		rg.GET("/rankings", middleware.Limiter(rate.Every(time.Second)*2, 4), api.GetRankings)
-		rg.GET("/search", middleware.Limiter(rate.Every(time.Second)*2, 4), api.SearchUsers)
+		rg.GET("/rankings", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), api.GetRankings)
+		rg.GET("/search", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), api.SearchUsers)
 
 		// 用户设置相关路由
-		rg.GET("/setting", middleware.Limiter(rate.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_GUEST), api.GetSetting)
-		rg.POST("/setting", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.UpdateSetting)
-		rg.POST("/setting/reset", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_GUEST), api.ResetSetting)
+		rg.GET("/setting", middleware.Limiter(ratelimiter.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_GUEST), api.GetSetting)
+		rg.POST("/setting", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.UpdateSetting)
+		rg.POST("/setting/reset", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_GUEST), api.ResetSetting)
 
 		// 管理员用户管理接口
-		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetUserList)
-		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
+		rg.GET("/list", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetUserList)
+		rg.POST("/delete", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteUser)
 	})
 
 	routeManager.RegisterMessageRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/count", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageCount)
-		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageList)
-		rg.POST("/read", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.MarkReadMessage)
+		rg.GET("/count", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageCount)
+		rg.GET("/list", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.GetMessageList)
+		rg.POST("/read", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_GUEST), api.MarkReadMessage)
 	})
 
 	// 注册帖子相关路由组
 	routeManager.RegisterPostRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
-		rg.POST("/edit", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.EditPost)
-		rg.POST("/delete", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.DeletePost)
+		rg.POST("/create", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.CreatePost)
+		rg.POST("/edit", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.EditPost)
+		rg.POST("/delete", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_USER), api.DeletePost)
 
-		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
-		rg.GET("/detail-visitor", middleware.Limiter(rate.Every(time.Second)*10, 10), api.GetPostDetailVisitor)
+		rg.GET("/detail", middleware.Limiter(ratelimiter.Every(time.Second)*10, 10), middleware.Authentication(global.ROLE_GUEST), api.GetPostDetail)
+		rg.GET("/detail-visitor", middleware.Limiter(ratelimiter.Every(time.Second)*10, 10), api.GetPostDetailVisitor)
 
-		rg.GET("/like-post", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
-		rg.POST("/like-post", middleware.Limiter(rate.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikePost)
+		rg.GET("/like-post", middleware.Limiter(ratelimiter.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikePost)
+		rg.POST("/like-post", middleware.Limiter(ratelimiter.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikePost)
 		// rg.GET("/info", middleware.Limiter(rate.Every(time.Second)*20, 40), api.GetUserInfo)
 
-		rg.POST("/comment", middleware.Limiter(rate.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreateComment)
-		rg.GET("/comment-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMoreComments)
-		rg.POST("/delete-comment", middleware.Limiter(rate.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.DeleteComment)
+		rg.POST("/comment", middleware.Limiter(ratelimiter.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.CreateComment)
+		rg.GET("/comment-more", middleware.Limiter(ratelimiter.Every(time.Second)*4, 10), api.GetMoreComments)
+		rg.POST("/delete-comment", middleware.Limiter(ratelimiter.Every(time.Second)*1, 3), middleware.Authentication(global.ROLE_USER), api.DeleteComment)
 
-		rg.GET("/like-comment", middleware.Limiter(rate.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikeComment)
-		rg.POST("/like-comment", middleware.Limiter(rate.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikeComment)
+		rg.GET("/like-comment", middleware.Limiter(ratelimiter.Every(time.Second)*50, 100), middleware.Authentication(global.ROLE_USER), api.GetLikeComment)
+		rg.POST("/like-comment", middleware.Limiter(ratelimiter.Every(time.Second)*5, 20), middleware.Authentication(global.ROLE_USER), api.LikeComment)
 
-		rg.GET("/post-more", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetMorePosts)
-		rg.GET("/post-page", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetPagePosts)
+		rg.GET("/post-more", middleware.Limiter(ratelimiter.Every(time.Second)*4, 10), api.GetMorePosts)
+		rg.GET("/post-page", middleware.Limiter(ratelimiter.Every(time.Second)*4, 10), api.GetPagePosts)
 
-		rg.POST("/feature", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
+		rg.POST("/feature", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.SetPostFeature)
 
-		rg.GET("/diary-list", middleware.Limiter(rate.Every(time.Second)*4, 10), api.GetDiaryList)
+		rg.GET("/diary-list", middleware.Limiter(ratelimiter.Every(time.Second)*4, 10), api.GetDiaryList)
 
-		rg.GET("/review-list", middleware.Limiter(rate.Every(time.Second)*4, 10), middleware.Authentication(global.ROLE_ADMIN), api.GetReviewList)
-		rg.POST("/audit-review", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AuditReview)
+		rg.GET("/review-list", middleware.Limiter(ratelimiter.Every(time.Second)*4, 10), middleware.Authentication(global.ROLE_ADMIN), api.GetReviewList)
+		rg.POST("/audit-review", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AuditReview)
 
-		rg.GET("/search", middleware.Limiter(rate.Every(time.Minute)*6, 10), api.SearchPosts)
+		rg.GET("/search", middleware.Limiter(ratelimiter.Every(time.Minute)*6, 10), api.SearchPosts)
 	})
 
 	// 注册比赛相关路由组
 	routeManager.RegisterContestRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestList)
+		rg.GET("/list", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), api.GetContestList)
 
-		rg.POST("/create", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.CreateContest)
-		rg.POST("/update", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.UpdateContest)
-		rg.POST("/delete", middleware.Limiter(rate.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.DeleteContest)
-		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*4, 8), api.GetContestDetail)
+		rg.POST("/create", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.CreateContest)
+		rg.POST("/update", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.UpdateContest)
+		rg.POST("/delete", middleware.Limiter(ratelimiter.Every(time.Minute)*3, 3), middleware.Authentication(global.ROLE_ADMIN), api.DeleteContest)
+		rg.GET("/detail", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), api.GetContestDetail)
 
-		rg.POST("/booking", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.BookingContest)
-		rg.GET("/booking", middleware.Limiter(rate.Every(time.Second)*8, 20), middleware.Authentication(global.ROLE_USER), api.IsBookingContest)
+		rg.POST("/booking", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_USER), api.BookingContest)
+		rg.GET("/booking", middleware.Limiter(ratelimiter.Every(time.Second)*8, 20), middleware.Authentication(global.ROLE_USER), api.IsBookingContest)
 
-		rg.POST("/recommend", middleware.Limiter(rate.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.RecommendContest)
+		rg.POST("/recommend", middleware.Limiter(ratelimiter.Every(time.Second)*4, 8), middleware.Authentication(global.ROLE_ADMIN), api.RecommendContest)
 	})
 
 	// 注册简历相关路由组
 	routeManager.RegisterResumeRoutes(func(rg *gin.RouterGroup) {
 		// 投递简历（无需认证）
-		rg.POST("/submit", middleware.Limiter(rate.Every(time.Minute)*5, 2), api.SubmitResume)
+		rg.POST("/submit", middleware.Limiter(ratelimiter.Every(time.Minute)*5, 2), api.SubmitResume)
 
 		// 修改简历（无需认证，通过邮箱验证码验证）
-		rg.POST("/update", middleware.Limiter(rate.Every(time.Minute)*5, 2), api.UpdateResume)
+		rg.POST("/update", middleware.Limiter(ratelimiter.Every(time.Minute)*5, 2), api.UpdateResume)
 
 		// 查询简历详细信息（需要管理员权限或邮箱验证码）
-		rg.GET("/detail", middleware.Limiter(rate.Every(time.Second)*10, 20), api.GetResumeDetail)
-		rg.GET("/detail-admin", middleware.Limiter(rate.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeDetailAdmin)
+		rg.GET("/detail", middleware.Limiter(ratelimiter.Every(time.Second)*10, 20), api.GetResumeDetail)
+		rg.GET("/detail-admin", middleware.Limiter(ratelimiter.Every(time.Second)*10, 20), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeDetailAdmin)
 
 		// 管理员功能
-		rg.GET("/list", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeList)
-		rg.POST("/delete", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
-		rg.POST("/accept", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AcceptResume)
-		rg.POST("/pending", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.PendingResume)
-		rg.POST("/reject", middleware.Limiter(rate.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.RejectResume)
+		rg.GET("/list", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.GetResumeList)
+		rg.POST("/delete", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.DeleteResume)
+		rg.POST("/accept", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.AcceptResume)
+		rg.POST("/pending", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.PendingResume)
+		rg.POST("/reject", middleware.Limiter(ratelimiter.Every(time.Second)*2, 4), middleware.Authentication(global.ROLE_ADMIN), api.RejectResume)
 	})
 }

@@ -8,15 +8,15 @@ import (
 	"tgwp/log/zlog"
 	"tgwp/response"
 	"tgwp/utils/jwtUtils"
+	"tgwp/utils/ratelimiter"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/time/rate"
 )
 
 var limiters sync.Map
 
 // Limiter 限流中间件
-func Limiter(r rate.Limit, b int) gin.HandlerFunc {
+func Limiter(r ratelimiter.Limit, b int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := zlog.GetCtxFromGin(c)
 		ip := c.ClientIP()
@@ -49,11 +49,11 @@ func Limiter(r rate.Limit, b int) gin.HandlerFunc {
 		// 为每个身份和限流配置创建独立的限流器
 		limiter, ok := limiters.Load(key)
 		if !ok {
-			limiter = rate.NewLimiter(r, b)
+			limiter = ratelimiter.NewLimiter(r, b)
 			limiters.Store(key, limiter)
 		}
 
-		if !limiter.(*rate.Limiter).Allow() {
+		if !limiter.(*ratelimiter.Limiter).Allow() {
 			zlog.CtxInfof(ctx, "请求过于频繁!")
 			response.NewResponse(c).Error(response.REQUEST_FREQUENTLY)
 			c.Abort()
