@@ -64,13 +64,13 @@ func (d *Dispatcher) handleAICommentJob(ctx context.Context, job Job) {
 					UpdatedTime: time.Now().UnixMilli(),
 				},
 			}
-			if err := repo.NewPostRepo(global.DB).CreateComment(comment); err != nil {
+			if err := repo.NewPostRepo(global.DB.WithContext(ctx)).CreateComment(comment); err != nil {
 				zlog.CtxErrorf(ctx, "Failed to create auto comment: %v", err)
 			} else {
 				zlog.CtxInfof(ctx, "Successfully created auto comment for post %d", payload.PostID)
 
 				// 获取帖子详情
-				post, err := repo.NewPostRepo(global.DB).GetPostDetail(payload.PostID)
+				post, err := repo.NewPostRepo(global.DB.WithContext(ctx)).GetPostDetail(payload.PostID)
 				if err != nil {
 					zlog.CtxErrorf(ctx, "Failed to get post detail for notification: %v", err)
 				} else {

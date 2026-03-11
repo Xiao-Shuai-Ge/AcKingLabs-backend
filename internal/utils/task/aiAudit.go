@@ -68,7 +68,7 @@ func (d *Dispatcher) handleAIAuditJob(ctx context.Context, job Job) {
 				PostContent: payload.Content,
 				UserID:      payload.UserID,
 			}
-			if err := repo.NewReviewRepo(global.DB).CreateReview(review); err != nil {
+			if err := repo.NewReviewRepo(global.DB.WithContext(ctx)).CreateReview(review); err != nil {
 				zlog.CtxErrorf(ctx, "Failed to create review record: %v", err)
 			}
 
