@@ -13,7 +13,7 @@ type ComputePostWeightPayload struct {
 
 func (d *Dispatcher) handleComputePostWeightJob(ctx context.Context, job Job) {
 	if payload, ok := job.Payload.(ComputePostWeightPayload); ok {
-		err := repo.NewPostRepo(global.DB).ComputePostWeightByID(payload.PostID)
+		err := repo.NewPostRepo(global.DB.WithContext(ctx)).ComputePostWeightByID(payload.PostID)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "Failed to compute post weight for ID %d: %v", payload.PostID, err)
 		}
