@@ -7,6 +7,7 @@ type Config struct {
 	Log           LoggerConfig        `mapstructure:"log"`
 	DB            DBConfig            `mapstructure:"database"`
 	Redis         RedisConfig         `mapstructure:"redis"`
+	RabbitMQ      RabbitMQConfig      `mapstructure:"rabbitmq"`
 	Coze          CozeConfig          `mapstructure:"coze"`
 	Email         EmailConfig         `mapstructure:"email"`
 	JWT           JWTConfig           `mapstructure:"jwt"`
@@ -40,6 +41,17 @@ type RedisConfig struct {
 	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type RabbitMQConfig struct {
+	Enable        bool   `mapstructure:"enable"`
+	URL           string `mapstructure:"url"`
+	Exchange      string `mapstructure:"exchange"`
+	Queue         string `mapstructure:"queue"`
+	RoutingKey    string `mapstructure:"routingKey"`
+	ConsumerTag   string `mapstructure:"consumerTag"`
+	WorkerCount   int    `mapstructure:"workerCount"`
+	PrefetchCount int    `mapstructure:"prefetchCount"`
 }
 
 type CozeConfig struct {

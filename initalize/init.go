@@ -34,7 +34,7 @@ func Init() {
 	InitSnowflake()
 
 	// 初始化任务调度器
-	task.Init(10, 1000)
+	task.Init(global.Config.RabbitMQ)
 
 	// 开启定时任务
 	Cron()

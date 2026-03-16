@@ -18,6 +18,16 @@ redis:
   password:
   db: 0
 
+rabbitmq:
+  enable: true
+  url: amqp://guest:guest@127.0.0.1:5672/
+  exchange: ackinglabs.task.exchange
+  queue: ackinglabs.task.queue
+  routingKey: ackinglabs.task
+  consumerTag: ackinglabs-task-consumer
+  workerCount: 10
+  prefetchCount: 10
+
 database:
   driver: mysql
   migrate: true
