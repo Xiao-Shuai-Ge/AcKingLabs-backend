@@ -18,11 +18,10 @@ type MentionNotifyPayload struct {
 	SourceType string // 来源类型：post, comment
 }
 
-func (d *Dispatcher) handleMentionNotifyJob(ctx context.Context, job Job) {
+func (d *Dispatcher) handleMentionNotifyJob(ctx context.Context, job Job) error {
 	payload, ok := job.Payload.(MentionNotifyPayload)
 	if !ok {
-		zlog.CtxErrorf(ctx, "Invalid payload for MentionNotify: %v", job.Payload)
-		return
+		return fmt.Errorf("invalid payload for MentionNotify: %v", job.Payload)
 	}
 
 	zlog.CtxInfof(ctx, "Start processing MentionNotify job for %s %d", payload.SourceType, payload.PostID)
@@ -33,7 +32,7 @@ func (d *Dispatcher) handleMentionNotifyJob(ctx context.Context, job Job) {
 	matches := re.FindAllStringSubmatch(payload.Content, -1)
 
 	if len(matches) == 0 {
-		return
+		return nil
 	}
 
 	// 2. 去重并收集用户ID
@@ -56,14 +55,13 @@ func (d *Dispatcher) handleMentionNotifyJob(ctx context.Context, job Job) {
 	}
 
 	if len(userIDs) == 0 {
-		return
+		return nil
 	}
 
 	// 3. 获取帖子信息用于生成链接和标题
 	post, err := repo.NewPostRepo(global.DB).GetPostDetail(payload.PostID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get post detail: %v", err)
-		return
+		return fmt.Errorf("get post detail failed: %w", err)
 	}
 
 	var url string
@@ -93,4 +91,5 @@ func (d *Dispatcher) handleMentionNotifyJob(ctx context.Context, job Job) {
 		notifyService.SendMentionNotify(ctx, userID, payload.SenderID, content, url)
 		zlog.CtxInfof(ctx, "Sent mention notify to user %s(%d)", username, userID)
 	}
+	return nil
 }

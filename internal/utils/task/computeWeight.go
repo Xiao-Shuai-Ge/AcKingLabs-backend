@@ -2,8 +2,8 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"tgwp/global"
-	"tgwp/log/zlog"
 	"tgwp/repo"
 )
 
@@ -11,14 +11,15 @@ type ComputePostWeightPayload struct {
 	PostID int64
 }
 
-func (d *Dispatcher) handleComputePostWeightJob(ctx context.Context, job Job) {
-	if payload, ok := job.Payload.(ComputePostWeightPayload); ok {
-		err := repo.NewPostRepo(global.DB.WithContext(ctx)).ComputePostWeightByID(payload.PostID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Failed to compute post weight for ID %d: %v", payload.PostID, err)
-		}
-	} else {
-		zlog.CtxErrorf(ctx, "Invalid payload for ComputePostWeight: %v", job.Payload)
+func (d *Dispatcher) handleComputePostWeightJob(ctx context.Context, job Job) error {
+	payload, ok := job.Payload.(ComputePostWeightPayload)
+	if !ok {
+		return fmt.Errorf("invalid payload for ComputePostWeight: %v", job.Payload)
 	}
-	zlog.CtxDebugf(ctx, "处理成功: %v", job.Payload)
+	err := repo.NewPostRepo(global.DB.WithContext(ctx)).ComputePostWeightByID(payload.PostID)
+	if err != nil {
+		return fmt.Errorf("compute post weight failed for ID %d: %w", payload.PostID, err)
+	}
+
+	return nil
 }

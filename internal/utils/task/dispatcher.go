@@ -17,6 +17,9 @@ const (
 	JOB_TYPE_AI_AUDIT            = "AIAudit"
 	JOB_TYPE_AI_COMMENT          = "AIComment"
 	JOB_TYPE_MENTION_NOTIFY      = "MentionNotify"
+
+	retryHeaderKey = "x-retry-count"
+	maxRetryCount  = 3
 )
 
 type Job struct {
@@ -116,6 +119,31 @@ func (d *Dispatcher) Run() error {
 		_ = producer.Close()
 		_ = conn.Close()
 		return fmt.Errorf("声明 RabbitMQ exchange 失败: %w", err)
+	}
+
+	deadLetterExchange := d.deadLetterExchange()
+	deadLetterQueue := d.deadLetterQueue()
+	deadLetterRoutingKey := d.deadLetterRoutingKey()
+
+	if err = producer.ExchangeDeclare(deadLetterExchange, "direct", true, false, false, false, nil); err != nil {
+		_ = consumer.Close()
+		_ = producer.Close()
+		_ = conn.Close()
+		return fmt.Errorf("声明 RabbitMQ dead-letter exchange 失败: %w", err)
+	}
+
+	if _, err = producer.QueueDeclare(deadLetterQueue, true, false, false, false, nil); err != nil {
+		_ = consumer.Close()
+		_ = producer.Close()
+		_ = conn.Close()
+		return fmt.Errorf("声明 RabbitMQ dead-letter queue 失败: %w", err)
+	}
+
+	if err = producer.QueueBind(deadLetterQueue, deadLetterRoutingKey, deadLetterExchange, false, nil); err != nil {
+		_ = consumer.Close()
+		_ = producer.Close()
+		_ = conn.Close()
+		return fmt.Errorf("绑定 RabbitMQ dead-letter queue 失败: %w", err)
 	}
 
 	if _, err = producer.QueueDeclare(d.config.Queue, true, false, false, false, nil); err != nil {
@@ -222,16 +250,7 @@ func (d *Dispatcher) AddJob(job Job) {
 		return
 	}
 
-	d.publishMu.Lock()
-	defer d.publishMu.Unlock()
-	publishCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	err = d.producer.PublishWithContext(publishCtx, d.config.Exchange, d.config.RoutingKey, false, false, amqp.Publishing{
-		ContentType:  "application/json",
-		DeliveryMode: amqp.Persistent,
-		Body:         body,
-		Timestamp:    time.Now(),
-	})
+	err = d.publishMessage(d.config.Exchange, d.config.RoutingKey, body, nil)
 	if err != nil {
 		zlog.CtxErrorf(context.Background(), "发布任务失败, job: %s, err: %v", job.Type, err)
 	}
@@ -255,9 +274,14 @@ func (d *Dispatcher) worker() {
 			continue
 		}
 
+		retryCount := getRetryCount(delivery.Headers)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		d.handleJob(ctx, job)
+		err = d.handleJob(ctx, job)
 		cancel()
+		if err != nil {
+			d.handleRetry(delivery, job, retryCount, err)
+			continue
+		}
 
 		err = delivery.Ack(false)
 		if err != nil {
@@ -301,23 +325,134 @@ func (d *Dispatcher) parseJob(message rabbitMQJobMessage) (Job, error) {
 	}
 }
 
-func (d *Dispatcher) handleJob(ctx context.Context, job Job) {
+func (d *Dispatcher) handleJob(ctx context.Context, job Job) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			zlog.CtxErrorf(ctx, "Worker panic: %v", r)
+			err = fmt.Errorf("worker panic: %v", r)
 		}
 	}()
 
 	switch job.Type {
 	case JOB_TYPE_COMPUTE_POST_WEIGHT:
-		d.handleComputePostWeightJob(ctx, job)
+		return d.handleComputePostWeightJob(ctx, job)
 	case JOB_TYPE_AI_AUDIT:
-		d.handleAIAuditJob(ctx, job)
+		return d.handleAIAuditJob(ctx, job)
 	case JOB_TYPE_AI_COMMENT:
-		d.handleAICommentJob(ctx, job)
+		return d.handleAICommentJob(ctx, job)
 	case JOB_TYPE_MENTION_NOTIFY:
-		d.handleMentionNotifyJob(ctx, job)
+		return d.handleMentionNotifyJob(ctx, job)
 	default:
-		zlog.CtxErrorf(ctx, "Unknown job type: %s", job.Type)
+		return fmt.Errorf("unknown job type: %s", job.Type)
 	}
+
+	return nil
+}
+
+func (d *Dispatcher) handleRetry(delivery amqp.Delivery, job Job, retryCount int, jobErr error) {
+	if retryCount < maxRetryCount {
+		headers := cloneHeaders(delivery.Headers)
+		headers[retryHeaderKey] = int32(retryCount + 1)
+		err := d.publishMessage(d.config.Exchange, d.config.RoutingKey, delivery.Body, headers)
+		if err != nil {
+			zlog.CtxErrorf(context.Background(), "任务重试发布失败, job: %s, 当前重试次数: %d, err: %v", job.Type, retryCount, err)
+			if nackErr := delivery.Nack(false, true); nackErr != nil {
+				zlog.CtxErrorf(context.Background(), "任务消息拒绝失败, job: %s, err: %v", job.Type, nackErr)
+			}
+			return
+		}
+		zlog.CtxWarnf(context.Background(), "任务处理失败，准备重试, job: %s, 重试次数: %d/%d, err: %v", job.Type, retryCount+1, maxRetryCount, jobErr)
+		if ackErr := delivery.Ack(false); ackErr != nil {
+			zlog.CtxErrorf(context.Background(), "任务消息确认失败, job: %s, err: %v", job.Type, ackErr)
+		}
+		return
+	}
+
+	err := d.publishMessage(d.deadLetterExchange(), d.deadLetterRoutingKey(), delivery.Body, delivery.Headers)
+	if err != nil {
+		zlog.CtxErrorf(context.Background(), "任务投递死信队列失败, job: %s, err: %v", job.Type, err)
+		if nackErr := delivery.Nack(false, true); nackErr != nil {
+			zlog.CtxErrorf(context.Background(), "任务消息拒绝失败, job: %s, err: %v", job.Type, nackErr)
+		}
+		return
+	}
+
+	zlog.CtxErrorf(context.Background(), "任务处理失败并进入死信队列, job: %s, 重试次数: %d, err: %v", job.Type, retryCount, jobErr)
+	if ackErr := delivery.Ack(false); ackErr != nil {
+		zlog.CtxErrorf(context.Background(), "任务消息确认失败, job: %s, err: %v", job.Type, ackErr)
+	}
+}
+
+func (d *Dispatcher) publishMessage(exchange, routingKey string, body []byte, headers amqp.Table) error {
+	d.publishMu.Lock()
+	defer d.publishMu.Unlock()
+
+	publishCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return d.producer.PublishWithContext(publishCtx, exchange, routingKey, false, false, amqp.Publishing{
+		ContentType:  "application/json",
+		DeliveryMode: amqp.Persistent,
+		Body:         body,
+		Timestamp:    time.Now(),
+		Headers:      headers,
+	})
+}
+
+func (d *Dispatcher) deadLetterExchange() string {
+	return d.config.Exchange + ".dlx"
+}
+
+func (d *Dispatcher) deadLetterQueue() string {
+	return d.config.Queue + ".dlq"
+}
+
+func (d *Dispatcher) deadLetterRoutingKey() string {
+	return d.config.RoutingKey + ".dead"
+}
+
+func getRetryCount(headers amqp.Table) int {
+	if headers == nil {
+		return 0
+	}
+
+	value, ok := headers[retryHeaderKey]
+	if !ok {
+		return 0
+	}
+
+	switch v := value.(type) {
+	case int:
+		return v
+	case int8:
+		return int(v)
+	case int16:
+		return int(v)
+	case int32:
+		return int(v)
+	case int64:
+		return int(v)
+	case uint:
+		return int(v)
+	case uint8:
+		return int(v)
+	case uint16:
+		return int(v)
+	case uint32:
+		return int(v)
+	case uint64:
+		return int(v)
+	default:
+		return 0
+	}
+}
+
+func cloneHeaders(headers amqp.Table) amqp.Table {
+	if len(headers) == 0 {
+		return amqp.Table{}
+	}
+
+	cloned := make(amqp.Table, len(headers))
+	for k, v := range headers {
+		cloned[k] = v
+	}
+	return cloned
 }
