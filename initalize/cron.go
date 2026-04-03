@@ -50,10 +50,10 @@ func Cron() {
 	}
 
 	// 每1分钟检查自动签到
-	_, err = crontab.AddFunc("@every 1m", AutoSignin)
-	if err != nil {
-		zlog.Errorf("添加定时任务失败:%v", err)
-	}
+	// _, err = crontab.AddFunc("@every 1m", AutoSignin)
+	// if err != nil {
+	// 	zlog.Errorf("添加定时任务失败:%v", err)
+	// }
 
 	zlog.Infof("启动定时任务成功")
 	crontab.Start()
